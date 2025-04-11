@@ -30,7 +30,18 @@ void GameScene::Initialize() {
 /// <summary>
 /// 更新
 /// </summary>
-void GameScene::Update() {}
+void GameScene::Update() {
+	
+	//スプライトの現在座標を取得(ゲッター)
+	Vector2 pos = sprite_->GetPosition();
+	
+	//(1,2)移動
+	pos.x += 1.0f;
+	pos.y += 2.0f;
+
+	//移動した座標を反映(セッター)
+	sprite_->SetPosition(pos);
+}
 
 
 /// <summary>
