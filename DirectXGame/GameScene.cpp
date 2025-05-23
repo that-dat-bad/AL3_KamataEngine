@@ -1,5 +1,6 @@
 #include "GameScene.h"
 #include "KamataEngine.h"
+
 using namespace KamataEngine;
 
 GameScene::GameScene() {}
@@ -14,6 +15,8 @@ GameScene::~GameScene() {
 
 	// 3Dモデルの解放
 	delete model_;
+
+	delete debugCamera_;
 }
 
 /// <summary>
@@ -31,7 +34,7 @@ void GameScene::Initialize() {
 	Audio::GetInstance()->PlayWave(soundDataHandle_);
 
 	// 音声データの再生
-	voiceHandle_ = Audio::GetInstance()->PlayWave(soundDataHandle_);
+	voiceHandle_ = Audio::GetInstance()->PlayWave(soundDataHandle_,true);
 
 	// スプライトインスタンスの生成
 	sprite_ = Sprite::Create(textureHandle_, {100, 50});
@@ -44,12 +47,20 @@ void GameScene::Initialize() {
 
 	// カメラの初期化
 	camera_.Initialize();
+
+	//ライン描画が参照するカメラを指定する
+	PrimitiveDrawer::GetInstance()->SetCamera(&camera_);
+	debugCamera_ = new DebugCamera(1280,720);
+	AxisIndicator::GetInstance()->SetVisible(true);
+	AxisIndicator::GetInstance()->SetTargetCamera(&debugCamera_->GetCamera());
 }
 
 /// <summary>
 /// 更新
 /// </summary>
 void GameScene::Update() {
+
+	debugCamera_->Update();
 
 	// スプライトの現在座標を取得(ゲッター)
 	Vector2 pos = sprite_->GetPosition();
@@ -66,6 +77,18 @@ void GameScene::Update() {
 		// スペースキーが押されたら音声データを停止
 		Audio::GetInstance()->StopWave(voiceHandle_);
 	}
+#ifdef _DEBUG
+	ImGui::Begin("Debug1");
+	ImGui::InputFloat3("InputFloat3", inputFloat);
+	ImGui::SliderFloat3("SliderFloat3", inputFloat, 0.0f, 1.0f);
+
+	ImGui::Text("Kamata Tarou %d.%d.%d", 2050, 12, 31);
+
+
+
+	ImGui::End();
+	ImGui::ShowDemoWindow();
+#endif
 }
 
 /// <summary>
@@ -88,7 +111,10 @@ void GameScene::Draw() {
 	// 3Dモデルの描画前処理
 	Model::PreDraw(dxCommon->GetCommandList());
 
-	model_->Draw(worldTransform_, camera_, textureHandle_);
+	model_->Draw(worldTransform_, debugCamera_->GetCamera(), textureHandle_);
+
+		PrimitiveDrawer::GetInstance()->DrawLine3d({0, 0, 0}, {0, 10, 0}, {1.0f, 0.0f, 0.0f, 1.0f});
+
 
 	// 3Dモデルの描画後処理
 	Model::PostDraw();

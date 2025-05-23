@@ -30,6 +30,9 @@ private:
 	// 音声データ再生ハンドル
 	uint32_t voiceHandle_ = 0;
 
+	//Imguiで値を入力する変数
+	float inputFloat[3] = {0, 0, 0};
+
 	//スプライト
 	KamataEngine::Sprite* sprite_ = nullptr;
 
@@ -41,4 +44,7 @@ private:
 
 	// カメラ
 	KamataEngine::Camera camera_;
+
+	//デバッグカメラ
+	KamataEngine::DebugCamera* debugCamera_=nullptr;
 };
