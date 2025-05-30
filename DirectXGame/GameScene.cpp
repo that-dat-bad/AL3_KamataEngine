@@ -1,5 +1,4 @@
 #include "GameScene.h"
-
 using namespace KamataEngine;
 
 
@@ -37,8 +36,8 @@ void GameScene::Update()
 
 void GameScene::Draw() 
 {
-	Model::PreDraw();
+	Model::PreDraw(dxCommon->GetCommandList());
 	    //自キャラの描画
 	player_->Draw();
-
+	Model::PostDraw();
 }
