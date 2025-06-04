@@ -1,15 +1,15 @@
 #pragma once
 #include "KamataEngine.h"
 #include <stdint.h>
+
 using namespace KamataEngine;
 
-class Player {
+class Skydome {
 public:
-	// 初期化
 	void Initialize(KamataEngine::Model* model, uint32_t textureHandle, KamataEngine::Camera* camera);
-	// 更新
+
 	void Update();
-	// 描画
+
 	void Draw();
 
 private:
