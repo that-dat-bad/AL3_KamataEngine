@@ -1,9 +1,9 @@
 #pragma once
 #include "KamataEngine.h"
+#include "MapChipField.h"
 #include "Player.h"
 #include "Skydome.h"
 #include <vector>
-#include"MapChipField.h"
 
 class GameScene {
 public:
@@ -38,6 +38,7 @@ private:
 
 	// 3Dモデルデータ
 	Model* blockModel_ = nullptr;
+	Model* playerModel_ = nullptr;
 	Model* skydomeModel_ = nullptr;
 
 	std::vector<std::vector<KamataEngine::WorldTransform*>> worldTransformBlocks_;
@@ -48,6 +49,6 @@ private:
 	// デバッグカメラ
 	KamataEngine::DebugCamera* debugCamera_ = nullptr;
 
-	//マップチップフィールド
+	// マップチップフィールド
 	MapChipField* mapChipField_;
 };

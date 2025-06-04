@@ -6,7 +6,7 @@ using namespace KamataEngine;
 class Player {
 public:
 	// 初期化
-	void Initialize(KamataEngine::Model* model, uint32_t textureHandle, KamataEngine::Camera* camera);
+	void Initialize(Model* model,Camera* camera,const Vector3& position);
 	// 更新
 	void Update();
 	// 描画
@@ -17,8 +17,19 @@ private:
 	WorldTransform worldTransform_;
 	// 3Dモデルデータ
 	Model* model_ = nullptr;
-	// テクスチャハンドル
-	uint32_t textureHandle_ = 0;
+
 
 	Camera* camera_ = nullptr;
+
+	Vector3 velocity_ = {};
+
+	static inline const float kAcceleration = 0.01f;
+	static inline const float kAttenuation = 0.02f;
+	static inline const float kLimitRunSpeed = 0.3f;
+
+	enum class LRDirection {
+		kRight,
+		kLeft,
+	};
+	LRDirection lrdirection_ = LRDirection::kRight;
 };
