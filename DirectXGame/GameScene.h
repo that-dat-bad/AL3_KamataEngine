@@ -4,6 +4,7 @@
 #include "Player.h"
 #include "Skydome.h"
 #include <vector>
+#include "CameraController.h"
 
 class GameScene {
 public:
@@ -35,6 +36,9 @@ private:
 
 	// 天球
 	Skydome* skydome_ = nullptr;
+
+	//カメラコントローラー
+	CameraController* cameraController_ = nullptr;
 
 	// 3Dモデルデータ
 	Model* blockModel_ = nullptr;

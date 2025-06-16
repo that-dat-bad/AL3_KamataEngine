@@ -1,7 +1,6 @@
 #include "GameScene.h"
 using namespace KamataEngine;
-#include"mathStruct.h"
-
+#include "mathStruct.h"
 
 // デストラクタ
 GameScene::~GameScene() {
@@ -19,6 +18,7 @@ GameScene::~GameScene() {
 	worldTransformBlocks_.clear();
 	delete debugCamera_; // デバッグカメラの解放
 	delete mapChipField_;
+	delete cameraController_; // カメラコントローラの解放
 }
 
 void GameScene::Initialize() {
@@ -45,11 +45,20 @@ void GameScene::Initialize() {
 	// デバッグカメラの生成
 	debugCamera_ = new DebugCamera(1280, 720);
 
+	// カメラコントローラの初期化
+	// 生成
+	cameraController_ = new CameraController();
+	// 初期化
+	cameraController_->Initialize();
+	// 対象をセット
+	cameraController_->SetTarget(player_);
+	// リセット(瞬間合わせ)
+	cameraController_->Reset();
+
 	mapChipField_ = new MapChipField;
 	mapChipField_->LoadMapChipCsv("Resources/blocks.csv");
 	GenerateBlocks();
 
-		
 	// 座標をマップチップ番号で指定
 	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(0, 18);
 
@@ -60,6 +69,7 @@ void GameScene::Initialize() {
 void GameScene::Update() {
 	// 自キャラの更新
 	player_->Update();
+
 
 	// ブロックの更新
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
@@ -92,7 +102,11 @@ void GameScene::Update() {
 		// ビュープロジェクション行列の転送
 		camera_.TransferMatrix();
 	} else {
+		// カメラコントローラーの更新
+		cameraController_->Update();
 		camera_.UpdateMatrix();
+		camera_.TransferMatrix();
+
 	}
 }
 
