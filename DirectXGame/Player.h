@@ -12,8 +12,11 @@ public:
 	// 描画
 	void Draw();
 
+	const Vector3& GetVelocity() const { return velocity_; }
+
 	// ワールド変換データの取得
 	const WorldTransform& GetWorldTransform() const { return worldTransform_; }
+
 
 private:
 	// ワールド変換データ
@@ -28,7 +31,7 @@ private:
 
 	static inline const float kAcceleration = 0.01f;
 	static inline const float kAttenuation = 0.02f;
-	static inline const float kLimitRunSpeed = 0.3f;
+	static inline const float kLimitRunSpeed = 0.5f;
 	static inline const float kTimeTurn = 0.3f;
 	static inline const float kGravityAcceleration = 0.005f;
 	static inline const float kLimitFallSpeed = 0.3f;

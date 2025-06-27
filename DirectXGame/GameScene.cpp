@@ -48,6 +48,8 @@ void GameScene::Initialize() {
 	// カメラコントローラの初期化
 	// 生成
 	cameraController_ = new CameraController();
+	// カメラをセット（初期化前にセット）
+	cameraController_->SetCamera(&camera_);
 	// 初期化
 	cameraController_->Initialize();
 	// 対象をセット

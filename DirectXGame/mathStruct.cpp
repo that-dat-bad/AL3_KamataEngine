@@ -89,3 +89,11 @@ Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Ve
 
 	return Multiply(Multiply(Multiply(Multiply(scaleMatrix, rotateX), rotateY), rotateZ), translateMatrix);
 }
+
+Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t) {
+	Vector3 buf;
+	buf.x = v1.x + (v2.x - v1.x) * t;
+	buf.y = v1.y + (v2.y - v1.y) * t;
+	buf.z = v1.z + (v2.z - v1.z) * t;
+	return buf;
+}
