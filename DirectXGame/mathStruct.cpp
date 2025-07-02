@@ -97,3 +97,11 @@ Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t) {
 	buf.z = v1.z + (v2.z - v1.z) * t;
 	return buf;
 }
+
+Vector3 operator+(const Vector3& v1, const Vector3& v2) {
+	Vector3 buf;
+	buf.x = v1.x + v2.x;
+	buf.y = v1.y + v2.y;
+	buf.z = v1.z + v2.z;
+	return buf;	
+}

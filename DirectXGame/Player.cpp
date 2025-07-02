@@ -17,7 +17,7 @@ void Player::Initialize(Model* model, Camera* camera, const Vector3& position) {
 }
 
 void Player::Update() {
-
+	//1.移動入力
 	if (onGround_) {
 		// 接地状態の処理
 		// ジャンプ入力で空中状態へ移行
@@ -99,6 +99,12 @@ void Player::Update() {
 		}
 	}
 
+	//衝突情報を初期化
+	CollisionMapInfo collisionMapInfo;
+	//移動量に速度の値をコピー
+	collisionMapInfo.moveVector = velocity_;
+	//マップ衝突チェック
+	MapCollider(collisionMapInfo);
 
 	// 旋回制御
 	if (turnTimer_ > 0.0f) {
@@ -132,3 +138,40 @@ void Player::Draw() {
 	model_->Draw(worldTransform_, *camera_);
 	Model::PostDraw();
 }
+
+void Player::MapCollider(CollisionMapInfo& info) { 
+	CeilingCollision(info);
+	//FloorCollision(info);
+}
+
+void Player::CeilingCollision(CollisionMapInfo& info) {
+	//上昇あり？
+	if (info.moveVector.y<=0) {
+		return;
+	}
+	
+	//移動後の4つの角の座標
+	std::array<Vector3, kNumCorner> positionNew;
+	for (uint32_t i = 0; i < positionNew.size(); i++) {
+		positionNew[i] = CornerPosition(worldTransform_.translation_ + info.moveVector, static_cast<Corner>(i));
+	}
+
+	MapChipType mapChipType;
+
+	//真上の当たり判定
+	bool hit = false;
+
+	//左上点の判定
+	MapChipField::IndexSet indexSet;
+}
+
+Vector3 Player::CornerPosition(const Vector3& center, Corner corner) { 
+	Vector3 offsetTable[kNumCorner] = {
+	    {+kWidth / 2.0f, -kHeight / 2.0f, 0.0f},
+        {-kWidth / 2.0f, -kHeight / 2.0f, 0.0f},
+        {-kWidth / 2.0f, +kHeight / 2.0f, 0.0f},
+        {+kWidth / 2.0f, +kHeight / 2.0f, 0.0f}
+    };
+	// 中心座標にオフセットを加算してコーナー座標を計算
+	return center + offsetTable[static_cast<uint32_t>(corner)];
+	 }

@@ -1,10 +1,30 @@
 #pragma once
 #include "KamataEngine.h"
 #include <stdint.h>
+#include"MapChipField.h"
 using namespace KamataEngine;
+
+class MapChipField;
 
 class Player {
 public:
+	struct CollisionMapInfo {
+		bool ceilingCollision = false; // 天井との当たり判定
+		bool groundCollision = false;  // 地面との当たり判定
+		bool wallCollision = false;    // 壁との当たり判定
+		Vector3 moveVector;            // 移動量
+	};
+
+	enum Corner {
+		kRightBottom,
+		kLeftBottom,
+		kRightTop,
+		kLeftTop,
+
+		kNumCorner
+
+	};
+
 	// 初期化
 	void Initialize(Model* model,Camera* camera,const Vector3& position);
 	// 更新
@@ -17,6 +37,13 @@ public:
 	// ワールド変換データの取得
 	const WorldTransform& GetWorldTransform() const { return worldTransform_; }
 
+	void SetMapChipField(MapChipField* mapChipField) { mapChipField_ = mapChipField; }
+
+	void MapCollider(CollisionMapInfo& info);
+
+	void CeilingCollision(CollisionMapInfo& info);
+
+	Vector3 CornerPosition(const Vector3& center, Corner corner);
 
 private:
 	// ワールド変換データ
@@ -51,4 +78,13 @@ private:
 
 	//接地判定
 	bool onGround_ = true;
+
+	//マップチップによるフィールド
+	MapChipField* mapChipField_ = nullptr;
+
+	//キャラクターの当たり判定サイズ
+	static inline const float kWidth = 0.8f;
+	static inline const float kHeight = 0.8f;
+
+
 };

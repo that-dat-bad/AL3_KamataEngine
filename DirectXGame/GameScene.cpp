@@ -33,8 +33,7 @@ void GameScene::Initialize() {
 	// カメラの初期化
 	camera_.Initialize();
 
-	// 自キャラ生成
-	player_ = new Player();
+
 
 	// 天球の生成
 	skydome_ = new Skydome();
@@ -45,7 +44,7 @@ void GameScene::Initialize() {
 	// デバッグカメラの生成
 	debugCamera_ = new DebugCamera(1280, 720);
 
-	// カメラコントローラの初期化
+	// カメラコントローラ
 	// 生成
 	cameraController_ = new CameraController();
 	// カメラをセット（初期化前にセット）
@@ -57,15 +56,18 @@ void GameScene::Initialize() {
 	// リセット(瞬間合わせ)
 	cameraController_->Reset();
 
+	// マップチップフィールドの生成と初期化
 	mapChipField_ = new MapChipField;
 	mapChipField_->LoadMapChipCsv("Resources/blocks.csv");
 	GenerateBlocks();
-
+	// 自キャラ生成
+	player_ = new Player();
 	// 座標をマップチップ番号で指定
 	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(0, 18);
-
 	// 自キャラの初期化
 	player_->Initialize(playerModel_, &camera_, playerPosition);
+
+	player_->SetMapChipField(mapChipField_);
 }
 
 void GameScene::Update() {
