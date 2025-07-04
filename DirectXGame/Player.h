@@ -45,6 +45,10 @@ public:
 
 	Vector3 CornerPosition(const Vector3& center, Corner corner);
 
+	void ResultReflectToMove(const CollisionMapInfo& info);
+
+	void OnCeilingCollision(const CollisionMapInfo& info);
+
 private:
 	// ワールド変換データ
 	WorldTransform worldTransform_;
@@ -56,13 +60,14 @@ private:
 
 	Vector3 velocity_ = {};
 
-	static inline const float kAcceleration = 0.01f;
+	static inline const float kAcceleration = 0.03f;
 	static inline const float kAttenuation = 0.02f;
 	static inline const float kLimitRunSpeed = 0.5f;
 	static inline const float kTimeTurn = 0.3f;
-	static inline const float kGravityAcceleration = 0.005f;
+	static inline const float kGravityAcceleration = 0.01f;
 	static inline const float kLimitFallSpeed = 0.3f;
-	static inline const float kJumpAcceleration = 0.2f;
+	static inline const float kJumpAcceleration = 0.5f;
+	static inline const float kBlank = 0.02f;
 
 	enum class LRDirection {
 		kRight,

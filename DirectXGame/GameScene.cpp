@@ -21,6 +21,8 @@ GameScene::~GameScene() {
 	delete cameraController_; // カメラコントローラの解放
 }
 
+// GameScene.cpp
+
 void GameScene::Initialize() {
 	// ファイル名を指定してテクスチャを読み込む
 	textureHandle_ = TextureManager::Load("UVchecker.png");
@@ -33,7 +35,31 @@ void GameScene::Initialize() {
 	// カメラの初期化
 	camera_.Initialize();
 
+	// マップチップフィールドの生成と初期化
+	mapChipField_ = new MapChipField;
+	mapChipField_->LoadMapChipCsv("Resources/blocks.csv");
+	GenerateBlocks();
 
+	// 自キャラ生成
+	player_ = new Player();
+	// 座標をマップチップ番号で指定
+	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(0, 18);
+	// 自キャラの初期化
+	player_->Initialize(playerModel_, &camera_, playerPosition);
+
+	player_->SetMapChipField(mapChipField_);
+
+	// カメラコントローラ
+	// 生成
+	cameraController_ = new CameraController();
+	// カメラをセット（初期化前にセット）
+	cameraController_->SetCamera(&camera_);
+	// 初期化
+	cameraController_->Initialize();
+	// 対象をセット (player_が生成された後なので安全)
+	cameraController_->SetTarget(player_);
+	// リセット(瞬間合わせ)
+	cameraController_->Reset();
 
 	// 天球の生成
 	skydome_ = new Skydome();
@@ -43,31 +69,6 @@ void GameScene::Initialize() {
 
 	// デバッグカメラの生成
 	debugCamera_ = new DebugCamera(1280, 720);
-
-	// カメラコントローラ
-	// 生成
-	cameraController_ = new CameraController();
-	// カメラをセット（初期化前にセット）
-	cameraController_->SetCamera(&camera_);
-	// 初期化
-	cameraController_->Initialize();
-	// 対象をセット
-	cameraController_->SetTarget(player_);
-	// リセット(瞬間合わせ)
-	cameraController_->Reset();
-
-	// マップチップフィールドの生成と初期化
-	mapChipField_ = new MapChipField;
-	mapChipField_->LoadMapChipCsv("Resources/blocks.csv");
-	GenerateBlocks();
-	// 自キャラ生成
-	player_ = new Player();
-	// 座標をマップチップ番号で指定
-	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(0, 18);
-	// 自キャラの初期化
-	player_->Initialize(playerModel_, &camera_, playerPosition);
-
-	player_->SetMapChipField(mapChipField_);
 }
 
 void GameScene::Update() {
@@ -138,7 +139,7 @@ void GameScene::Draw() {
 void GameScene::GenerateBlocks() {
 	const float kBlockWidth = 2.0f;
 	const float kBlockHeight = 2.0f;
-	uint32_t numBlockVirtical = mapChipField_->GetNumBlockVirtical();
+	uint32_t numBlockVirtical = mapChipField_->GetNumBlockVertical();
 	uint32_t numBlockHorizontal = mapChipField_->GetNumBlockHorizontal();
 
 	worldTransformBlocks_.resize(numBlockVirtical);
@@ -150,9 +151,9 @@ void GameScene::GenerateBlocks() {
 	for (uint32_t i = 0; i < numBlockVirtical; i++) {
 		for (uint32_t j = 0; j < numBlockHorizontal; j++) {
 			// MapChipField からマップチップのタイプを取得
-			MapChipType mapChipType = mapChipField_->GetMapChipTypeByIndex(j, i);
+			MapChipField::MapChipType mapChipType = mapChipField_->GetMapChipTypeByIndex(j, i);
 
-			if (mapChipType != MapChipType::kBlank) {
+			if (mapChipType != MapChipField::MapChipType::kBlank) {
 				worldTransformBlocks_[i][j] = new WorldTransform();
 				worldTransformBlocks_[i][j]->Initialize();
 				worldTransformBlocks_[i][j]->translation_.x = kBlockWidth * j;
