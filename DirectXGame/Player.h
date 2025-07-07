@@ -1,7 +1,7 @@
 #pragma once
 #include "KamataEngine.h"
+#include "MapChipField.h"
 #include <stdint.h>
-#include"MapChipField.h"
 using namespace KamataEngine;
 
 class MapChipField;
@@ -9,10 +9,14 @@ class MapChipField;
 class Player {
 public:
 	struct CollisionMapInfo {
-		bool ceilingCollision = false; // 天井との当たり判定
-		bool groundCollision = false;  // 地面との当たり判定
-		bool wallCollision = false;    // 壁との当たり判定
-		Vector3 moveVector;            // 移動量
+		// 天井衝突フラグ
+		bool ceilingCollision = false;
+		// 着地フラグ
+		bool groundCollision = false;
+		// 壁接触フラグ
+		bool wallCollision = false;
+		// 移動量
+		Vector3 moveVector;
 	};
 
 	enum Corner {
@@ -26,7 +30,7 @@ public:
 	};
 
 	// 初期化
-	void Initialize(Model* model,Camera* camera,const Vector3& position);
+	void Initialize(Model* model, Camera* camera, const Vector3& position);
 	// 更新
 	void Update();
 	// 描画
@@ -49,12 +53,21 @@ public:
 
 	void OnCeilingCollision(const CollisionMapInfo& info);
 
+	void GroundCollision(CollisionMapInfo& info);
+
+	void ToggleOnGround(const CollisionMapInfo& info);
+
+	void RightCollision(CollisionMapInfo& info);
+
+	void LeftCollision(CollisionMapInfo& info);
+
+	void OnWallCollision(const CollisionMapInfo& info);
+
 private:
 	// ワールド変換データ
 	WorldTransform worldTransform_;
 	// 3Dモデルデータ
 	Model* model_ = nullptr;
-
 
 	Camera* camera_ = nullptr;
 
@@ -68,6 +81,8 @@ private:
 	static inline const float kLimitFallSpeed = 0.3f;
 	static inline const float kJumpAcceleration = 0.5f;
 	static inline const float kBlank = 0.02f;
+	static inline const float kAttenuationLanding = 0.05f;
+	static inline const float kAttenuationWall = 0.2f;
 
 	enum class LRDirection {
 		kRight,
@@ -75,21 +90,19 @@ private:
 	};
 	LRDirection lrdirection_ = LRDirection::kRight;
 
-	//旋回開始時の角度
+	// 旋回開始時の角度
 	float turnFIrstRotationY_ = 0.0f;
 
-	//旋回タイマー
+	// 旋回タイマー
 	float turnTimer_ = 0.0f;
 
-	//接地判定
+	// 接地判定
 	bool onGround_ = true;
 
-	//マップチップによるフィールド
+	// マップチップによるフィールド
 	MapChipField* mapChipField_ = nullptr;
 
-	//キャラクターの当たり判定サイズ
-	static inline const float kWidth = 0.8f;
-	static inline const float kHeight = 0.8f;
-
-
+	// キャラクターの当たり判定サイズ
+	static inline const float kWidth = 1.8f;
+	static inline const float kHeight = 1.8f;
 };
