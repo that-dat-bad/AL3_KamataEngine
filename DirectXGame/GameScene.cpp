@@ -19,9 +19,9 @@ GameScene::~GameScene() {
 	delete debugCamera_; // デバッグカメラの解放
 	delete mapChipField_;
 	delete cameraController_; // カメラコントローラの解放
+	delete enemy_;            // 敵キャラの解放
 }
 
-// GameScene.cpp
 
 void GameScene::Initialize() {
 	// ファイル名を指定してテクスチャを読み込む
@@ -31,6 +31,7 @@ void GameScene::Initialize() {
 	playerModel_ = Model::CreateFromOBJ("player", true);
 	blockModel_ = Model::Create();
 	skydomeModel_ = Model::CreateFromOBJ("ball", true);
+	enemyModel_ = Model::CreateFromOBJ("enemy", true);
 
 	// カメラの初期化
 	camera_.Initialize();
@@ -48,6 +49,14 @@ void GameScene::Initialize() {
 	player_->Initialize(playerModel_, &camera_, playerPosition);
 
 	player_->SetMapChipField(mapChipField_);
+
+	//敵キャラ生成
+	enemy_ = new Enemy();
+	// 座標をマップチップ番号で指定
+	Vector3 enemyPosition = mapChipField_->GetMapChipPositionByIndex(16, 18);
+	// 敵キャラの初期化
+	enemy_->Initialize(enemyModel_, &camera_, enemyPosition);
+
 
 	// カメラコントローラ
 	// 生成
@@ -74,6 +83,7 @@ void GameScene::Initialize() {
 void GameScene::Update() {
 	// 自キャラの更新
 	player_->Update();
+	enemy_->Update();
 
 
 	// ブロックの更新
@@ -117,9 +127,10 @@ void GameScene::Update() {
 
 void GameScene::Draw() {
 
-	// 自キャラの描画
+	// 描画
 	player_->Draw();
 	skydome_->Draw();
+	enemy_->Draw();
 
 	Model::PreDraw(DirectXCommon::GetInstance()->GetCommandList());
 	// ブロックの描画

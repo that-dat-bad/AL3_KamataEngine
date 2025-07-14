@@ -5,6 +5,7 @@
 #include "Skydome.h"
 #include <vector>
 #include "CameraController.h"
+#include "Enemy.h"
 
 class GameScene {
 public:
@@ -37,6 +38,9 @@ private:
 	// 天球
 	Skydome* skydome_ = nullptr;
 
+	//敵キャラ
+	Enemy* enemy_ = nullptr;
+
 	//カメラコントローラー
 	CameraController* cameraController_ = nullptr;
 
@@ -44,6 +48,7 @@ private:
 	Model* blockModel_ = nullptr;
 	Model* playerModel_ = nullptr;
 	Model* skydomeModel_ = nullptr;
+	Model* enemyModel_ = nullptr;
 
 	std::vector<std::vector<KamataEngine::WorldTransform*>> worldTransformBlocks_;
 
