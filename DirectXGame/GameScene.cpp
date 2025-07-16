@@ -25,6 +25,8 @@ GameScene::~GameScene() {
 		delete enemy;
 	}
 	enemies_.clear(); // vectorをクリア
+	delete deathParticles_;
+	delete deathParticleModel_;
 }
 
 void GameScene::Initialize() {
@@ -36,7 +38,7 @@ void GameScene::Initialize() {
 	blockModel_ = Model::Create();
 	skydomeModel_ = Model::CreateFromOBJ("ball", true);
 	enemyModel_ = Model::CreateFromOBJ("enemy", true);
-
+	deathParticleModel_ = Model::CreateFromOBJ("deathParticle", true);
 	// カメラの初期化
 	camera_.Initialize();
 
@@ -53,6 +55,11 @@ void GameScene::Initialize() {
 	player_->Initialize(playerModel_, &camera_, playerPosition);
 
 	player_->SetMapChipField(mapChipField_);
+
+	// --- デスパーティクルの生成テスト ---
+	deathParticles_ = new DeathParticles();
+	// プレイヤーと同じ位置に生成
+	deathParticles_->Initialize(deathParticleModel_, &camera_, player_->GetWorldPosition());
 
 	// 敵キャラ生成
 	kEnemyCount_ = 2; // 敵キャラの数を定義
@@ -89,6 +96,11 @@ void GameScene::Update() {
 		enemy->Update();
 	}
 	CheckAllCollisions();
+
+	// デスパーティクルの更新
+	if (deathParticles_) {
+		deathParticles_->Update();
+	}
 	// ブロックの更新
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
@@ -128,9 +140,10 @@ void GameScene::Draw() {
 	// 描画
 	player_->Draw();
 	skydome_->Draw();
-
-	// 【修正点】範囲ベースfor文で全ての敵を描画する
-	// コンテナから要素を削除せず、全ての要素に対してDrawを呼び出す
+	// デスパーティクルの描画
+	if (deathParticles_) {
+		deathParticles_->Draw();
+	}
 	for (Enemy* enemy : enemies_) {
 		enemy->Draw();
 	}
@@ -190,4 +203,6 @@ void GameScene::CheckAllCollisions() {
 			enemy->OnCollision(player_);
 		}
 	}
+
+
 }

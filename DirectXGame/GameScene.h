@@ -1,11 +1,12 @@
 #pragma once
+#include "CameraController.h"
+#include "Enemy.h"
 #include "KamataEngine.h"
 #include "MapChipField.h"
 #include "Player.h"
 #include "Skydome.h"
+#include "DeathParticles.h"
 #include <vector>
-#include "CameraController.h"
-#include "Enemy.h"
 
 class GameScene {
 public:
@@ -40,11 +41,14 @@ private:
 	// 天球
 	Skydome* skydome_ = nullptr;
 
-	//敵キャラ
+	// デスパーティクル
+	DeathParticles* deathParticles_ = nullptr;
+
+	// 敵キャラ
 	std::list<Enemy*> enemies_;
 	int32_t kEnemyCount_ = 1;
 
-	//カメラコントローラー
+	// カメラコントローラー
 	CameraController* cameraController_ = nullptr;
 
 	// 3Dモデルデータ
@@ -52,6 +56,7 @@ private:
 	Model* playerModel_ = nullptr;
 	Model* skydomeModel_ = nullptr;
 	Model* enemyModel_ = nullptr;
+	Model* deathParticleModel_ = nullptr;
 
 	std::vector<std::vector<KamataEngine::WorldTransform*>> worldTransformBlocks_;
 
