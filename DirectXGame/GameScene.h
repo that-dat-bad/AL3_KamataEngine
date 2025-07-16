@@ -22,6 +22,8 @@ public:
 
 	void GenerateBlocks();
 
+	void CheckAllCollisions();
+
 private:
 	// テクスチャハンドル
 	uint32_t textureHandle_ = 0;
@@ -39,7 +41,8 @@ private:
 	Skydome* skydome_ = nullptr;
 
 	//敵キャラ
-	Enemy* enemy_ = nullptr;
+	std::list<Enemy*> enemies_;
+	int32_t kEnemyCount_ = 1;
 
 	//カメラコントローラー
 	CameraController* cameraController_ = nullptr;

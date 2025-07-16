@@ -2,6 +2,10 @@
 #include "KamataEngine.h"
 using namespace KamataEngine;
 
+struct AABB {
+	Vector3 min;
+	Vector3 max;
+};
 
 
 Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2);
@@ -25,3 +29,5 @@ Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t);
 Vector3 operator+(const Vector3& v1, const Vector3& v2);
 
 Vector3 operator+=(Vector3& v1, const Vector3& v2);
+
+bool AABBCollision(const AABB& aabb1, const AABB& aabb2);

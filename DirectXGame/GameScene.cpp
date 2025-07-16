@@ -1,10 +1,11 @@
 #include "GameScene.h"
 using namespace KamataEngine;
 #include "mathStruct.h"
+#include <random>
 
 // デストラクタ
 GameScene::~GameScene() {
-	delete model_;
+	// delete model_; // 初期化されていないため削除
 	delete player_;
 	delete blockModel_;
 	delete skydomeModel_;
@@ -19,9 +20,12 @@ GameScene::~GameScene() {
 	delete debugCamera_; // デバッグカメラの解放
 	delete mapChipField_;
 	delete cameraController_; // カメラコントローラの解放
-	delete enemy_;            // 敵キャラの解放
-}
 
+	for (Enemy* enemy : enemies_) {
+		delete enemy;
+	}
+	enemies_.clear(); // vectorをクリア
+}
 
 void GameScene::Initialize() {
 	// ファイル名を指定してテクスチャを読み込む
@@ -50,30 +54,27 @@ void GameScene::Initialize() {
 
 	player_->SetMapChipField(mapChipField_);
 
-	//敵キャラ生成
-	enemy_ = new Enemy();
-	// 座標をマップチップ番号で指定
-	Vector3 enemyPosition = mapChipField_->GetMapChipPositionByIndex(16, 18);
-	// 敵キャラの初期化
-	enemy_->Initialize(enemyModel_, &camera_, enemyPosition);
+	// 敵キャラ生成
+	kEnemyCount_ = 2; // 敵キャラの数を定義
 
+	for (int32_t i = 0; i < kEnemyCount_; i++) {
+		Enemy* newEnemy = new Enemy();
+
+		Vector3 enemyPosition = {(float)(i + 1) * 20, 2.0f, 0.0f};
+
+		newEnemy->Initialize(enemyModel_, &camera_, enemyPosition);
+		enemies_.push_back(newEnemy);
+	}
 
 	// カメラコントローラ
-	// 生成
 	cameraController_ = new CameraController();
-	// カメラをセット（初期化前にセット）
 	cameraController_->SetCamera(&camera_);
-	// 初期化
 	cameraController_->Initialize();
-	// 対象をセット (player_が生成された後なので安全)
 	cameraController_->SetTarget(player_);
-	// リセット(瞬間合わせ)
 	cameraController_->Reset();
 
 	// 天球の生成
 	skydome_ = new Skydome();
-
-	// 天球の初期化
 	skydome_->Initialize(skydomeModel_, textureHandle_, &camera_);
 
 	// デバッグカメラの生成
@@ -83,16 +84,17 @@ void GameScene::Initialize() {
 void GameScene::Update() {
 	// 自キャラの更新
 	player_->Update();
-	enemy_->Update();
 
-
+	for (Enemy* enemy : enemies_) {
+		enemy->Update();
+	}
+	CheckAllCollisions();
 	// ブロックの更新
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
 			if (!worldTransformBlock) {
 				continue;
 			}
-
 			// アフィン変換の作成
 			Matrix4x4 affineMatrix = MakeAffineMatrix(worldTransformBlock->scale_, worldTransformBlock->rotation_, worldTransformBlock->translation_);
 			worldTransformBlock->matWorld_ = affineMatrix;
@@ -101,11 +103,9 @@ void GameScene::Update() {
 	}
 	// デバック時のみキーを押したときデバックカメラを有効化
 #ifdef _DEBUG
-
 	if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
 		isDebugCameraActive_ = !isDebugCameraActive_;
 	}
-
 #endif // DEBUG
 
 	if (isDebugCameraActive_) {
@@ -121,16 +121,19 @@ void GameScene::Update() {
 		cameraController_->Update();
 		camera_.UpdateMatrix();
 		camera_.TransferMatrix();
-
 	}
 }
 
 void GameScene::Draw() {
-
 	// 描画
 	player_->Draw();
 	skydome_->Draw();
-	enemy_->Draw();
+
+	// 【修正点】範囲ベースfor文で全ての敵を描画する
+	// コンテナから要素を削除せず、全ての要素に対してDrawを呼び出す
+	for (Enemy* enemy : enemies_) {
+		enemy->Draw();
+	}
 
 	Model::PreDraw(DirectXCommon::GetInstance()->GetCommandList());
 	// ブロックの描画
@@ -140,7 +143,6 @@ void GameScene::Draw() {
 			if (!worldTransformBlock) {
 				continue;
 			}
-
 			blockModel_->Draw(*worldTransformBlock, camera_);
 		}
 	}
@@ -173,6 +175,19 @@ void GameScene::GenerateBlocks() {
 				// ブロックがない場合は nullptr を設定
 				worldTransformBlocks_[i][j] = nullptr;
 			}
+		}
+	}
+}
+
+void GameScene::CheckAllCollisions() {
+	AABB aabb1, aabb2;
+	aabb1 = player_->GetAABB();
+
+	for (Enemy* enemy : enemies_) {
+		aabb2 = enemy->GetAABB();
+		if (AABBCollision(aabb1, aabb2)) {
+			player_->OnCollision(enemy);
+			enemy->OnCollision(player_);
 		}
 	}
 }

@@ -1,4 +1,5 @@
 #include "Enemy.h"
+#include "mathStruct.h"
 
 void Enemy::Initialize(Model* model, Camera* camera, const Vector3& position) {
 	// nullポインタチェック
@@ -32,3 +33,25 @@ void Enemy::Draw() {
 	model_->Draw(worldTransform_, *camera_);
 	Model::PostDraw();
 }
+
+AABB Enemy::GetAABB() {
+	Vector3 center = GetWorldPosition();
+	AABB aabb;
+	aabb.min.x = center.x - kWidth / 2.0f;
+	aabb.max.x = center.x + kWidth / 2.0f;
+	aabb.min.y = center.y - kHeight / 2.0f;
+	aabb.max.y = center.y + kHeight / 2.0f;
+	aabb.min.z = center.z - kWidth / 2.0f;
+	aabb.max.z = center.z + kWidth / 2.0f;
+	return aabb;
+}
+
+Vector3 Enemy::GetWorldPosition() {
+	Vector3 worldPos;
+	worldPos.x = worldTransform_.matWorld_.m[3][0];
+	worldPos.y = worldTransform_.matWorld_.m[3][1];
+	worldPos.z = worldTransform_.matWorld_.m[3][2];
+	return worldPos;
+}
+
+void Enemy::OnCollision(const Player* player) { (void)player; }

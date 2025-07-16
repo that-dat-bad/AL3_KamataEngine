@@ -1,10 +1,12 @@
 #pragma once
 #include "KamataEngine.h"
 #include "MapChipField.h"
+#include "mathStruct.h"
 #include <stdint.h>
 using namespace KamataEngine;
 
 class MapChipField;
+class Enemy;
 
 class Player {
 public:
@@ -62,6 +64,12 @@ public:
 	void LeftCollision(CollisionMapInfo& info);
 
 	void OnWallCollision(const CollisionMapInfo& info);
+
+	Vector3 GetWorldPosition();
+
+	AABB GetAABB();
+
+	void OnCollision(const Enemy* enemy);
 
 private:
 	// ワールド変換データ

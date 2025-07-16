@@ -5,6 +5,8 @@
 
 using namespace KamataEngine;
 
+class Player;
+
 class Enemy {
 public:
 	void Initialize(Model* model, Camera* camera, const Vector3& position);
@@ -12,6 +14,12 @@ public:
 	void Update();
 
 	void Draw();
+
+	AABB GetAABB();
+
+	Vector3 GetWorldPosition();
+
+	void OnCollision(const Player* player);
 
 private:
 	static inline const float kWalkSpeed = -0.1f; // 敵の歩行速度
@@ -23,6 +31,9 @@ private:
 	static inline const float kWalkMotionAngleEnd = std::numbers::pi_v<float> / 2.0f; // 最後の角度
 
 	static inline const float kWalkMotionTime = 1.0f; // 歩行モーションの周期
+
+	static inline const float kWidth = 1.9f;
+	static inline const float kHeight = 1.9f;
 
 	// 経過時間
 	float walkTimer_ = 0.0f;
