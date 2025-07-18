@@ -1,11 +1,11 @@
 #pragma once
 #include "CameraController.h"
+#include "DeathParticles.h"
 #include "Enemy.h"
 #include "KamataEngine.h"
 #include "MapChipField.h"
 #include "Player.h"
 #include "Skydome.h"
-#include "DeathParticles.h"
 #include <vector>
 
 class GameScene {
@@ -24,6 +24,8 @@ public:
 	void GenerateBlocks();
 
 	void CheckAllCollisions();
+
+	bool IsFinished() const { return finished_; }
 
 private:
 	// テクスチャハンドル
@@ -68,4 +70,21 @@ private:
 
 	// マップチップフィールド
 	MapChipField* mapChipField_;
+
+	enum class Phase {
+		kPlay, // ゲームプレイ
+		kDeath,
+
+	};
+	// 現在のフェーズ
+	Phase phase_;
+
+	// 終了フラグ
+	bool finished_ = false;
+
+	// フェーズごとの更新処理
+	void UpdatePlayPhase();
+	void UpdateDeathPhase();
+	// フェーズの切り替え処理
+	void ChangePhase();
 };

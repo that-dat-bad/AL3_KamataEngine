@@ -42,6 +42,9 @@ void GameScene::Initialize() {
 	// カメラの初期化
 	camera_.Initialize();
 
+	//フェーズの初期化
+	phase_ = Phase::kPlay;
+
 	// マップチップフィールドの生成と初期化
 	mapChipField_ = new MapChipField;
 	mapChipField_->LoadMapChipCsv("Resources/blocks.csv");
@@ -56,10 +59,6 @@ void GameScene::Initialize() {
 
 	player_->SetMapChipField(mapChipField_);
 
-	// --- デスパーティクルの生成テスト ---
-	deathParticles_ = new DeathParticles();
-	// プレイヤーと同じ位置に生成
-	deathParticles_->Initialize(deathParticleModel_, &camera_, player_->GetWorldPosition());
 
 	// 敵キャラ生成
 	kEnemyCount_ = 2; // 敵キャラの数を定義
@@ -89,30 +88,18 @@ void GameScene::Initialize() {
 }
 
 void GameScene::Update() {
-	// 自キャラの更新
-	player_->Update();
 
-	for (Enemy* enemy : enemies_) {
-		enemy->Update();
+	// フェーズごとの更新
+	switch (phase_) {
+	case Phase::kPlay:
+		UpdatePlayPhase(); // ゲームプレイフェーズの更新
+		break;
+	case Phase::kDeath:
+		UpdateDeathPhase(); // デス演出フェーズの更新
+		break;
 	}
-	CheckAllCollisions();
-
-	// デスパーティクルの更新
-	if (deathParticles_) {
-		deathParticles_->Update();
-	}
-	// ブロックの更新
-	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
-		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
-			if (!worldTransformBlock) {
-				continue;
-			}
-			// アフィン変換の作成
-			Matrix4x4 affineMatrix = MakeAffineMatrix(worldTransformBlock->scale_, worldTransformBlock->rotation_, worldTransformBlock->translation_);
-			worldTransformBlock->matWorld_ = affineMatrix;
-			worldTransformBlock->TransferMatrix();
-		}
-	}
+	// フェーズの切り替え
+	ChangePhase();
 	// デバック時のみキーを押したときデバックカメラを有効化
 #ifdef _DEBUG
 	if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
@@ -206,3 +193,73 @@ void GameScene::CheckAllCollisions() {
 
 
 }
+
+#pragma region フェーズごとの処理
+
+void GameScene::UpdatePlayPhase() {
+	// 天球の更新
+	skydome_->Update();
+	// 自キャラの更新
+	player_->Update();
+	// 敵キャラの更新
+	for (Enemy* enemy : enemies_) {
+		enemy->Update();
+	}
+	// カメラコントローラーの更新
+	cameraController_->Update();
+	// 全ての当たり判定
+	CheckAllCollisions();
+	// ブロックの更新
+	for (auto& row : worldTransformBlocks_) {
+		for (WorldTransform* block : row) {
+			if (block) {
+				block->matWorld_ = MakeAffineMatrix(block->scale_, block->rotation_, block->translation_);
+				block->TransferMatrix();
+			}
+		}
+	}
+}
+
+void GameScene::UpdateDeathPhase() {
+	// 天球の更新
+	skydome_->Update();
+	// 敵キャラの更新
+	for (Enemy* enemy : enemies_) {
+		enemy->Update();
+	}
+	// デスパーティクルの更新
+	if (deathParticles_) {
+		deathParticles_->Update();
+	}
+	// カメラの更新 (カメラコントローラーは呼ばない)
+	camera_.UpdateMatrix();
+	// ブロックの更新
+	for (auto& row : worldTransformBlocks_) {
+		for (WorldTransform* block : row) {
+			if (block) {
+				block->matWorld_ = MakeAffineMatrix(block->scale_, block->rotation_, block->translation_);
+				block->TransferMatrix();
+			}
+		}
+	}
+}
+
+void GameScene::ChangePhase() {
+	switch (phase_) {
+	case Phase::kPlay:
+		// プレイヤーが死んだらデス演出フェーズに切り替え
+		if (player_->IsDead()) {
+			phase_ = Phase::kDeath;
+			// パーティクルを生成
+			delete deathParticles_;
+			deathParticles_ = new DeathParticles();
+			deathParticles_->Initialize(deathParticleModel_, &camera_, player_->GetWorldPosition());
+		}
+		break;
+	case Phase::kDeath:
+		// デス演出から他のフェーズへの切り替えは今回実装しない
+		break;
+	}
+}
+
+#pragma endregion

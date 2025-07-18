@@ -71,6 +71,8 @@ public:
 
 	void OnCollision(const Enemy* enemy);
 
+	bool IsDead() const { return isDead_; }
+
 private:
 	// ワールド変換データ
 	WorldTransform worldTransform_;
@@ -113,4 +115,7 @@ private:
 	// キャラクターの当たり判定サイズ
 	static inline const float kWidth = 1.8f;
 	static inline const float kHeight = 1.8f;
+
+	//デスフラグ
+	bool isDead_ = false;
 };

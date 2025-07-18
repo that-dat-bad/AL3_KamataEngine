@@ -367,8 +367,4 @@ AABB Player::GetAABB() {
 	return aabb;
 }
 
-void Player::OnCollision(const Enemy* enemy) {
-	(void)enemy;
-	// 仮処理
-
-}
+void Player::OnCollision(const Enemy* enemy) { isDead_ = true; }
