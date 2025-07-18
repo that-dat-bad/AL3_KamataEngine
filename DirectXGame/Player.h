@@ -19,6 +19,7 @@ public:
 		bool wallCollision = false;
 		// 移動量
 		Vector3 moveVector;
+
 	};
 
 	enum Corner {

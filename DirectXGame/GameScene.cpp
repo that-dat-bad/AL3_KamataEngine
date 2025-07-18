@@ -42,7 +42,7 @@ void GameScene::Initialize() {
 	// カメラの初期化
 	camera_.Initialize();
 
-	//フェーズの初期化
+	// フェーズの初期化
 	phase_ = Phase::kPlay;
 
 	// マップチップフィールドの生成と初期化
@@ -58,7 +58,6 @@ void GameScene::Initialize() {
 	player_->Initialize(playerModel_, &camera_, playerPosition);
 
 	player_->SetMapChipField(mapChipField_);
-
 
 	// 敵キャラ生成
 	kEnemyCount_ = 2; // 敵キャラの数を定義
@@ -124,29 +123,36 @@ void GameScene::Update() {
 }
 
 void GameScene::Draw() {
-	// 描画
-	player_->Draw();
+	// 背景など共通の描画
 	skydome_->Draw();
-	// デスパーティクルの描画
-	if (deathParticles_) {
-		deathParticles_->Draw();
+
+	// ブロックの描画
+	Model::PreDraw(DirectXCommon::GetInstance()->GetCommandList());
+	for (auto& row : worldTransformBlocks_) {
+		for (WorldTransform* block : row) {
+			if (block) {
+				blockModel_->Draw(*block, camera_);
+			}
+		}
 	}
+	Model::PostDraw();
+
+	// 敵の描画
 	for (Enemy* enemy : enemies_) {
 		enemy->Draw();
 	}
 
-	Model::PreDraw(DirectXCommon::GetInstance()->GetCommandList());
-	// ブロックの描画
-	for (uint32_t i = 0; i < worldTransformBlocks_.size(); ++i) {
-		for (uint32_t j = 0; j < worldTransformBlocks_[i].size(); ++j) {
-			WorldTransform* worldTransformBlock = worldTransformBlocks_[i][j];
-			if (!worldTransformBlock) {
-				continue;
-			}
-			blockModel_->Draw(*worldTransformBlock, camera_);
+	// フェーズごとの描画
+	switch (phase_) {
+	case Phase::kPlay:
+		player_->Draw(); // プレイ中のみプレイヤーを描画
+		break;
+	case Phase::kDeath:
+		if (deathParticles_) {
+			deathParticles_->Draw(); // デス演出中のみパーティクルを描画
 		}
+		break;
 	}
-	Model::PostDraw();
 }
 
 void GameScene::GenerateBlocks() {
@@ -190,8 +196,6 @@ void GameScene::CheckAllCollisions() {
 			enemy->OnCollision(player_);
 		}
 	}
-
-
 }
 
 #pragma region フェーズごとの処理
@@ -230,6 +234,10 @@ void GameScene::UpdateDeathPhase() {
 	// デスパーティクルの更新
 	if (deathParticles_) {
 		deathParticles_->Update();
+		// パーティクル演出が終わったら、このシーンを終了状態にする
+		if (deathParticles_->IsFinished()) {
+			finished_ = true;
+		}
 	}
 	// カメラの更新 (カメラコントローラーは呼ばない)
 	camera_.UpdateMatrix();

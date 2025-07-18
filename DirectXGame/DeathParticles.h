@@ -14,6 +14,7 @@ public:
 	void Initialize(Model* model, Camera* camera, const Vector3& position);
 	void Update();
 	void Draw();
+	bool IsFinished() const { return isFinished_; }
 
 private:
 	// パーティクルの個数
