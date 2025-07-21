@@ -27,9 +27,11 @@ GameScene::~GameScene() {
 	enemies_.clear(); // vectorをクリア
 	delete deathParticles_;
 	delete deathParticleModel_;
+	delete fade_;
 }
 
 void GameScene::Initialize() {
+	isInitialized_ = true;
 	// ファイル名を指定してテクスチャを読み込む
 	textureHandle_ = TextureManager::Load("UVchecker.png");
 
@@ -39,16 +41,15 @@ void GameScene::Initialize() {
 	skydomeModel_ = Model::CreateFromOBJ("ball", true);
 	enemyModel_ = Model::CreateFromOBJ("enemy", true);
 	deathParticleModel_ = Model::CreateFromOBJ("deathParticle", true);
-	// カメラの初期化
-	camera_.Initialize();
-
-	// フェーズの初期化
-	phase_ = Phase::kPlay;
 
 	// マップチップフィールドの生成と初期化
 	mapChipField_ = new MapChipField;
 	mapChipField_->LoadMapChipCsv("Resources/blocks.csv");
 	GenerateBlocks();
+
+
+
+
 
 	// 自キャラ生成
 	player_ = new Player();
@@ -84,19 +85,38 @@ void GameScene::Initialize() {
 
 	// デバッグカメラの生成
 	debugCamera_ = new DebugCamera(1280, 720);
+	// フェードの生成・初期化
+	fade_ = new Fade();
+	fade_->Initialize();
+	// フェードインから開始
+	phase_ = Phase::kFadeIn;
+	fade_->Start(Fade::Status::FadeIn, 1.0f); // 1秒でフェードイン
 }
 
 void GameScene::Update() {
 
 	// フェーズごとの更新
 	switch (phase_) {
+	case Phase::kFadeIn:
+		fade_->Update();
+		if (fade_->IsFinished()) {
+			phase_ = Phase::kPlay;
+		}
+		break;
 	case Phase::kPlay:
 		UpdatePlayPhase(); // ゲームプレイフェーズの更新
 		break;
 	case Phase::kDeath:
 		UpdateDeathPhase(); // デス演出フェーズの更新
 		break;
+	case Phase::kFadeOut:
+		fade_->Update();
+		if (fade_->IsFinished()) {
+			finished_ = true; // シーン終了
+		}
+		break;
 	}
+
 	// フェーズの切り替え
 	ChangePhase();
 	// デバック時のみキーを押したときデバックカメラを有効化
@@ -123,6 +143,10 @@ void GameScene::Update() {
 }
 
 void GameScene::Draw() {
+	if (!isInitialized_) {
+		return; 
+	}
+
 	// 背景など共通の描画
 	skydome_->Draw();
 
@@ -153,6 +177,8 @@ void GameScene::Draw() {
 		}
 		break;
 	}
+
+	fade_->Draw();
 }
 
 void GameScene::GenerateBlocks() {
@@ -236,7 +262,8 @@ void GameScene::UpdateDeathPhase() {
 		deathParticles_->Update();
 		// パーティクル演出が終わったら、このシーンを終了状態にする
 		if (deathParticles_->IsFinished()) {
-			finished_ = true;
+			phase_ = Phase::kFadeOut;
+			fade_->Start(Fade::Status::FadeOut, 1.0f);
 		}
 	}
 	// カメラの更新 (カメラコントローラーは呼ばない)

@@ -7,6 +7,7 @@
 #include "Player.h"
 #include "Skydome.h"
 #include <vector>
+#include"Fade.h"
 
 class GameScene {
 public:
@@ -71,10 +72,14 @@ private:
 	// マップチップフィールド
 	MapChipField* mapChipField_;
 
-	enum class Phase {
-		kPlay, // ゲームプレイ
-		kDeath,
+		// フェード
+	Fade* fade_ = nullptr;
 
+	enum class Phase {
+		kFadeIn,   // フェードイン
+		kPlay,    // ゲームプレイ
+		kDeath,   // デス演出
+		kFadeOut, // フェードアウト
 	};
 	// 現在のフェーズ
 	Phase phase_;
@@ -82,6 +87,8 @@ private:
 	// 終了フラグ
 	bool finished_ = false;
 
+	bool isInitialized_ = false;
+	                                                          
 	// フェーズごとの更新処理
 	void UpdatePlayPhase();
 	void UpdateDeathPhase();
