@@ -47,10 +47,6 @@ void GameScene::Initialize() {
 	mapChipField_->LoadMapChipCsv("Resources/blocks.csv");
 	GenerateBlocks();
 
-
-
-
-
 	// 自キャラ生成
 	player_ = new Player();
 	// 座標をマップチップ番号で指定
@@ -98,10 +94,7 @@ void GameScene::Update() {
 	// フェーズごとの更新
 	switch (phase_) {
 	case Phase::kFadeIn:
-		fade_->Update();
-		if (fade_->IsFinished()) {
-			phase_ = Phase::kPlay;
-		}
+		UpdateFadeInPhase(); // フェードインフェーズの更新
 		break;
 	case Phase::kPlay:
 		UpdatePlayPhase(); // ゲームプレイフェーズの更新
@@ -144,13 +137,14 @@ void GameScene::Update() {
 
 void GameScene::Draw() {
 	if (!isInitialized_) {
-		return; 
+		return;
 	}
 
-	// 背景など共通の描画
+	// 常に表示されるオブジェクト
+	// --- 天球 ---
 	skydome_->Draw();
 
-	// ブロックの描画
+	// --- ブロック ---
 	Model::PreDraw(DirectXCommon::GetInstance()->GetCommandList());
 	for (auto& row : worldTransformBlocks_) {
 		for (WorldTransform* block : row) {
@@ -161,24 +155,31 @@ void GameScene::Draw() {
 	}
 	Model::PostDraw();
 
-	// 敵の描画
+	// --- 敵キャラ ---
 	for (Enemy* enemy : enemies_) {
 		enemy->Draw();
 	}
 
-	// フェーズごとの描画
+	// --- プレイヤー ---
+	// 死亡演出中は非表示にする
+	if (phase_ != Phase::kDeath) {
+		player_->Draw();
+	}
+
+	// --- フェーズごとの特別な描画 ---
 	switch (phase_) {
-	case Phase::kPlay:
-		player_->Draw(); // プレイ中のみプレイヤーを描画
-		break;
 	case Phase::kDeath:
 		if (deathParticles_) {
-			deathParticles_->Draw(); // デス演出中のみパーティクルを描画
+			deathParticles_->Draw();
 		}
 		break;
 	}
 
-	fade_->Draw();
+	// --- フェード ---
+	// フェードインとフェードアウト中のみ描画
+	if (phase_ == Phase::kFadeIn || phase_ == Phase::kFadeOut) {
+		fade_->Draw();
+	}
 }
 
 void GameScene::GenerateBlocks() {
@@ -225,6 +226,25 @@ void GameScene::CheckAllCollisions() {
 }
 
 #pragma region フェーズごとの処理
+
+void GameScene::UpdateFadeInPhase() {
+	player_->Update();
+	fade_->Update();
+	for (Enemy* enemy : enemies_) {
+		enemy->Update();
+	}
+	for (auto& row : worldTransformBlocks_) {
+		for (WorldTransform* block : row) {
+			if (block) {
+				block->matWorld_ = MakeAffineMatrix(block->scale_, block->rotation_, block->translation_);
+				block->TransferMatrix();
+			}
+		}
+	}
+	if (fade_->IsFinished()) {
+		phase_ = Phase::kPlay;
+	}
+}
 
 void GameScene::UpdatePlayPhase() {
 	// 天球の更新

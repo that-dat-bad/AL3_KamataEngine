@@ -90,6 +90,7 @@ private:
 	bool isInitialized_ = false;
 	                                                          
 	// フェーズごとの更新処理
+	void UpdateFadeInPhase();
 	void UpdatePlayPhase();
 	void UpdateDeathPhase();
 	// フェーズの切り替え処理
