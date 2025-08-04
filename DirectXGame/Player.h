@@ -12,14 +12,14 @@ class Enemy;
 class Player {
 public:
 	// --- 基本関数 ---
-	void Initialize(Model* model, Model* modelAttack, Camera* camera, const Vector3& position);
+	void Initialize(Model* model, Model* modelAttackRight, Model* modelAttackLeft, uint32_t textureHandle, Camera* camera, const Vector3& position);
 	void Update();
 	void Draw();
 
 	// --- ゲッター ---
 	const Vector3& GetVelocity() const { return velocity_; }
 	const WorldTransform& GetWorldTransform() const { return worldTransform_; }
-	Vector3 GetWorldPosition();
+	Vector3 GetWorldPosition() const;
 	AABB GetAABB();
 	bool IsDead() const { return isDead_; }
 	bool IsAttack() const { return behavior_ == Behavior::kAttack; }
@@ -33,29 +33,25 @@ public:
 private:
 	// --- 振る舞い（ビヘイビア） ---
 	enum class Behavior {
-		kRoot,    // 通常状態
-		kAttack,  // 攻撃中
-		kUnknown, // 不明（リクエストなし）
+		kRoot,
+		kAttack,
+		kUnknown,
 	};
 	Behavior behavior_ = Behavior::kRoot;
 	Behavior behaviorRequest_ = Behavior::kUnknown;
 
-	// 攻撃フェーズ（サブフェーズ）
 	enum class AttackPhase {
-		kAnticipation,  // 溜め
-		kDash,          // 突進
-		kFollowThrough, // 余韻
+		kAnticipation,
+		kDash,
+		kFollowThrough,
 	};
-	// 現在の攻撃フェーズ
 	AttackPhase attackPhase_;
 
-	// --- 各ビヘイビアの処理関数 ---
 	void BehaviorRootInitialize();
 	void BehaviorRootUpdate();
 	void BehaviorAttackInitialize();
 	void BehaviorAttackUpdate();
 
-	// 攻撃ギミックの時間経過カウンター
 	uint32_t attackParameter_ = 0;
 
 	// --- マップとの衝突判定用の内部関数・構造体 ---
@@ -81,7 +77,9 @@ private:
 	WorldTransform worldTransform_;
 	WorldTransform worldTransformAttack_;
 	Model* model_ = nullptr;
-	Model* modelAttack_ = nullptr;
+	Model* modelAttackRight_ = nullptr;
+	Model* modelAttackLeft_ = nullptr;
+	uint32_t textureHandleAttack_ = 0;
 	Camera* camera_ = nullptr;
 	Vector3 velocity_ = {};
 	bool isDead_ = false;
@@ -100,14 +98,12 @@ private:
 	static inline const float kGravityAcceleration = 0.01f;
 	static inline const float kLimitFallSpeed = 0.3f;
 	static inline const float kJumpAcceleration = 0.5f;
-	static inline const float kBlank = 0.02f;
 	static inline const float kAttenuationLanding = 0.05f;
 	static inline const float kAttenuationWall = 0.2f;
 	static inline const float kWidth = 1.8f;
 	static inline const float kHeight = 1.8f;
-	static inline const float kAttackDashSpeed = 0.8f;
 	static inline const uint32_t kAttackAnticipationDuration = 10;
 	static inline const uint32_t kAttackDashDuration = 10;
 	static inline const uint32_t kAttackFollowThroughDuration = 30;
-	static inline const Vector3 kAttackVelocity = {1.5f, 0.0f, 0.0f};
+	static inline const Vector3 kAttackVelocity = {0.8f, 0.0f, 0.0f};
 };

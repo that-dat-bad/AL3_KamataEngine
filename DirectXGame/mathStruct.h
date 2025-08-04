@@ -30,6 +30,8 @@ Vector3 operator+(const Vector3& v1, const Vector3& v2);
 
 Vector3 operator+=(Vector3& v1, const Vector3& v2);
 
+
+
 bool AABBCollision(const AABB& aabb1, const AABB& aabb2);
 
 Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix);
@@ -39,3 +41,8 @@ float EaseIn(float start, float end, float t);
 
 // EaseOut
 float EaseOut(float start, float end, float t);
+
+Vector3 operator*(const Vector3& v, float s);
+Vector3 operator/(const Vector3& v, float s);
+Vector3& operator*=(Vector3& v, float s);
+Vector3& operator/=(Vector3& v, float s);

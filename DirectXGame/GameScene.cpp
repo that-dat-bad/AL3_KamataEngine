@@ -2,15 +2,18 @@
 using namespace KamataEngine;
 #include "mathStruct.h"
 #include <random>
+#include "HitEffect.h"
 
 // デストラクタ
 GameScene::~GameScene() {
-	// delete model_; // 初期化されていないため削除
+
 	delete player_;
 	delete blockModel_;
 	delete skydomeModel_;
 	delete skydome_;
-	delete attackFxModel_;
+	delete attackFxModelRight_;
+	delete attackFxModelLeft_;
+	delete hitEffectModel_;
 	for (auto& row : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : row) {
 			delete worldTransformBlock; // 各ワールド変換を解放
@@ -29,6 +32,10 @@ GameScene::~GameScene() {
 	delete deathParticles_;
 	delete deathParticleModel_;
 	delete fade_;
+	for (HitEffect* effect : hitEffects_) {
+		delete effect;
+	}
+	hitEffects_.clear();
 }
 
 void GameScene::Initialize() {
@@ -42,7 +49,12 @@ void GameScene::Initialize() {
 	skydomeModel_ = Model::CreateFromOBJ("ball", true);
 	enemyModel_ = Model::CreateFromOBJ("enemy", true);
 	deathParticleModel_ = Model::CreateFromOBJ("deathParticle", true);
-	attackFxModel_ = Model::CreateFromOBJ("attackFX", true);
+	attackFxModelRight_ = Model::CreateFromOBJ("attackFXRight", true);
+	attackFxModelLeft_ = Model::CreateFromOBJ("attackFXLeft", true);
+	hitEffectModel_ = Model::CreateFromOBJ("hitFX", true);
+
+	HitEffect::SetModel(hitEffectModel_);
+	HitEffect::SetCamera(&camera_);
 
 	// マップチップフィールドの生成と初期化
 	mapChipField_ = new MapChipField;
@@ -54,7 +66,7 @@ void GameScene::Initialize() {
 	// 座標をマップチップ番号で指定
 	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(0, 18);
 	// 自キャラの初期化
-	player_->Initialize(playerModel_, attackFxModel_, &camera_, playerPosition);
+	player_->Initialize(playerModel_, attackFxModelRight_, attackFxModelLeft_, textureHandleAttackFX_, &camera_, playerPosition);
 
 	player_->SetMapChipField(mapChipField_);
 
@@ -67,6 +79,7 @@ void GameScene::Initialize() {
 		Vector3 enemyPosition = {(float)(i + 1) * 20, 2.0f, 0.0f};
 
 		newEnemy->Initialize(enemyModel_, &camera_, enemyPosition);
+		newEnemy->SetGameScene(this); 
 		enemies_.push_back(newEnemy);
 	}
 
@@ -161,7 +174,9 @@ void GameScene::Draw() {
 	for (Enemy* enemy : enemies_) {
 		enemy->Draw();
 	}
-
+	for (HitEffect* effect : hitEffects_) {
+		effect->Draw();
+	}
 	// --- プレイヤー ---
 	// 死亡演出中は非表示にする
 	if (phase_ != Phase::kDeath) {
@@ -230,6 +245,11 @@ void GameScene::CheckAllCollisions() {
 	}
 }
 
+void GameScene::CreateHitEffect(const Vector3& position, const Vector3& rotation) {
+	HitEffect* newHitEffect = HitEffect::Create(position, rotation);
+	hitEffects_.push_back(newHitEffect);
+}
+
 #pragma region フェーズごとの処理
 
 void GameScene::UpdateFadeInPhase() {
@@ -269,6 +289,10 @@ void GameScene::UpdatePlayPhase() {
 		return false;
 		
 	});
+
+	for (HitEffect* effect : hitEffects_) {
+		effect->Update();
+	}
 	// カメラコントローラーの更新
 	cameraController_->Update();
 	// 全ての当たり判定

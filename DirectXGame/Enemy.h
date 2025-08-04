@@ -6,6 +6,7 @@
 using namespace KamataEngine;
 
 class Player;
+class GameScene;
 
 class Enemy {
 public:
@@ -17,6 +18,7 @@ public:
 	void OnCollision(const Player* player);
 	bool IsDead() const { return isDead_; }
 	bool IsCollisionDisabled() const { return isCollisionDisabled_; }
+	void SetGameScene(GameScene* gameScene) { gameScene_ = gameScene; }
 
 private:
 	// --- 振る舞い（ビヘイビア） ---
@@ -39,6 +41,7 @@ private:
 	Camera* camera_ = nullptr;
 	Vector3 velocity_ = {};
 	float walkTimer_ = 0.0f;
+	GameScene* gameScene_ = nullptr;
 
 	// --- 定数 ---
 	static inline const float kWalkSpeed = -0.1f;

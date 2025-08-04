@@ -2,13 +2,13 @@
 #include "CameraController.h"
 #include "DeathParticles.h"
 #include "Enemy.h"
+#include "Fade.h"
+#include "HitEffect.h"
 #include "KamataEngine.h"
 #include "MapChipField.h"
 #include "Player.h"
 #include "Skydome.h"
 #include <vector>
-#include"Fade.h"
-
 class GameScene {
 public:
 	~GameScene();
@@ -27,6 +27,8 @@ public:
 	void CheckAllCollisions();
 
 	bool IsFinished() const { return finished_; }
+
+	void CreateHitEffect(const Vector3& position, const Vector3& rotation);
 
 private:
 	// テクスチャハンドル
@@ -60,9 +62,11 @@ private:
 	Model* skydomeModel_ = nullptr;
 	Model* enemyModel_ = nullptr;
 	Model* deathParticleModel_ = nullptr;
-	Model* attackFxModel_ = nullptr;
+	Model* attackFxModelRight_ = nullptr; // 右向き用
+	Model* attackFxModelLeft_ = nullptr;
+	Model* hitEffectModel_ = nullptr;
 	std::vector<std::vector<KamataEngine::WorldTransform*>> worldTransformBlocks_;
-
+	uint32_t textureHandleAttackFX_ = 0;
 	// デバックカメラ無効
 	bool isDebugCameraActive_ = false;
 
@@ -72,11 +76,11 @@ private:
 	// マップチップフィールド
 	MapChipField* mapChipField_;
 
-		// フェード
+	// フェード
 	Fade* fade_ = nullptr;
 
 	enum class Phase {
-		kFadeIn,   // フェードイン
+		kFadeIn,  // フェードイン
 		kPlay,    // ゲームプレイ
 		kDeath,   // デス演出
 		kFadeOut, // フェードアウト
@@ -88,7 +92,9 @@ private:
 	bool finished_ = false;
 
 	bool isInitialized_ = false;
-	                                                          
+
+	std::list<HitEffect*> hitEffects_;
+
 	// フェーズごとの更新処理
 	void UpdateFadeInPhase();
 	void UpdatePlayPhase();

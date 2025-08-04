@@ -3,11 +3,14 @@
 #include <algorithm>
 #include <numbers>
 
-void Player::Initialize(Model* model, Model* modelAttack, Camera* camera, const Vector3& position) {
+void Player::Initialize(Model* model, Model* modelAttackRight, Model* modelAttackLeft, uint32_t textureHandle, Camera* camera, const Vector3& position) {
 	assert(model);
-	assert(modelAttack);
+	assert(modelAttackRight);
+	assert(modelAttackLeft);
 	model_ = model;
-	modelAttack_ = modelAttack;
+	modelAttackRight_ = modelAttackRight;
+	modelAttackLeft_ = modelAttackLeft;
+	textureHandleAttack_ = textureHandle;
 	camera_ = camera;
 	worldTransform_.Initialize();
 	worldTransformAttack_.Initialize();
@@ -123,94 +126,76 @@ void Player::BehaviorRootUpdate() {
 }
 
 void Player::BehaviorAttackInitialize() {
-	// 攻撃開始時は「溜め」から
-	attackPhase_ = AttackPhase::kAnticipation;
 	attackParameter_ = 0;
-	// 攻撃開始時に速度をゼロにする
+	attackPhase_ = AttackPhase::kAnticipation;
 	velocity_ = {};
 }
 
 void Player::BehaviorAttackUpdate() {
-	// 攻撃用のローカルな速度変数
 	Vector3 velocity{};
 
-	// 攻撃のサブフェーズに応じて処理を分岐
 	switch (attackPhase_) {
-	case AttackPhase::kAnticipation: // 溜め動作
-	{
+	case AttackPhase::kAnticipation: {
 		float t = static_cast<float>(attackParameter_) / kAttackAnticipationDuration;
-		// 横に縮んで縦に伸びる (Squash & Stretch)
 		worldTransform_.scale_.z = EaseOut(1.0f, 0.3f, t);
 		worldTransform_.scale_.y = EaseOut(1.0f, 1.6f, t);
-
-		// 溜め時間が終わったら突進へ移行
 		if (attackParameter_ >= kAttackAnticipationDuration) {
 			attackPhase_ = AttackPhase::kDash;
-			attackParameter_ = 0; // カウンターをリセット
+			attackParameter_ = 0;
 		}
 	} break;
-
-	case AttackPhase::kDash: // 突進動作
-	{
-		// 突進中だけ移動させる
+	case AttackPhase::kDash: {
 		if (lrdirection_ == LRDirection::kRight) {
 			velocity = kAttackVelocity;
 		} else {
 			velocity = {-kAttackVelocity.x, kAttackVelocity.y, kAttackVelocity.z};
 		}
-
+		worldTransform_.translation_ += velocity;
 		float t = static_cast<float>(attackParameter_) / kAttackDashDuration;
-		// 横に伸びて縦に縮む
 		worldTransform_.scale_.z = EaseOut(0.3f, 1.3f, t);
 		worldTransform_.scale_.y = EaseIn(1.6f, 0.7f, t);
-		worldTransform_.translation_ += velocity;
-
-		// 突進時間が終わったら余韻へ移行
 		if (attackParameter_ >= kAttackDashDuration) {
 			attackPhase_ = AttackPhase::kFollowThrough;
-			attackParameter_ = 0; // カウンターをリセット
+			attackParameter_ = 0;
 		}
 	} break;
-
-	case AttackPhase::kFollowThrough: // 余韻動作
-	{
+	case AttackPhase::kFollowThrough: {
 		float t = static_cast<float>(attackParameter_) / kAttackFollowThroughDuration;
-		// 通常サイズに戻る
 		worldTransform_.scale_.z = EaseOut(1.3f, 1.0f, t);
 		worldTransform_.scale_.y = EaseIn(0.7f, 1.0f, t);
-
-		// 余韻時間が終わったら通常状態へ戻るリクエストを出す
 		if (attackParameter_ >= kAttackFollowThroughDuration) {
 			behaviorRequest_ = Behavior::kRoot;
 		}
 	} break;
 	}
-
-	// 攻撃中のパラメータを加算
 	attackParameter_++;
 
 	worldTransformAttack_.translation_ = worldTransform_.translation_;
 	worldTransformAttack_.rotation_ = worldTransform_.rotation_;
+	worldTransformAttack_.translation_.z -= 0.1f;
 	worldTransformAttack_.matWorld_ = MakeAffineMatrix(worldTransformAttack_.scale_, worldTransformAttack_.rotation_, worldTransformAttack_.translation_);
 	worldTransformAttack_.TransferMatrix();
-	
-	// 突進の移動量をvelocity_に反映させる
+
 	velocity_ = velocity;
 }
 
 void Player::Draw() {
 	Model::PreDraw(DirectXCommon::GetInstance()->GetCommandList());
 	model_->Draw(worldTransform_, *camera_);
-	// 攻撃中の場合のみ、エフェクトを描画する
-	if (behavior_ == Behavior::kAttack) {
-		modelAttack_->Draw(worldTransformAttack_, *camera_);
-	}
-	Model::PostDraw();
 
+	if (behavior_ == Behavior::kAttack) {
+
+		if (lrdirection_ == LRDirection::kRight) {
+			modelAttackRight_->Draw(worldTransformAttack_, *camera_);
+		} else {
+			modelAttackLeft_->Draw(worldTransformAttack_, *camera_);
+		}
+	}
+
+	Model::PostDraw();
 }
 
 void Player::OnCollision(const Enemy* enemy) {
-	// 攻撃中はダメージを受けない
 	if (IsAttack()) {
 		return;
 	}
@@ -218,7 +203,7 @@ void Player::OnCollision(const Enemy* enemy) {
 	isDead_ = true;
 }
 
-Vector3 Player::GetWorldPosition() {
+Vector3 Player::GetWorldPosition() const {
 	Vector3 worldPos;
 	worldPos.x = worldTransform_.matWorld_.m[3][0];
 	worldPos.y = worldTransform_.matWorld_.m[3][1];

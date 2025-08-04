@@ -144,3 +144,21 @@ float EaseOut(float start, float end, float t) {
 	float result = end - start;
 	return start + result * (1.0f - (1.0f - t) * (1.0f - t));
 }
+
+Vector3 operator*(const Vector3& v, float s) { return {v.x * s, v.y * s, v.z * s}; }
+
+Vector3 operator/(const Vector3& v, float s) { return {v.x / s, v.y / s, v.z / s}; }
+
+Vector3& operator*=(Vector3& v, float s) {
+	v.x *= s;
+	v.y *= s;
+	v.z *= s;
+	return v;
+}
+
+Vector3& operator/=(Vector3& v, float s) {
+	v.x /= s;
+	v.y /= s;
+	v.z /= s;
+	return v;
+}

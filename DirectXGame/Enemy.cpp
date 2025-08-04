@@ -1,6 +1,7 @@
 #include "Enemy.h"
 #include "Player.h"
 #include "mathStruct.h"
+#include "GameScene.h"
 
 void Enemy::Initialize(Model* model, Camera* camera, const Vector3& position) {
 	assert(model);
@@ -87,5 +88,12 @@ void Enemy::OnCollision(const Player* player) {
 		behaviorRequest_ = Behavior::kDeath;
 		walkTimer_ = 0;
 		isCollisionDisabled_ = true;
+
+		// 敵と自キャラの中間地点にエフェクトを生成
+		Vector3 playerPos = player->GetWorldPosition();
+		const Vector3& playerRot = player->GetWorldTransform().rotation_; // プレイヤーの回転を取得
+		Vector3 enemyPos = GetWorldPosition();
+		Vector3 effectPos = (playerPos + enemyPos) * 0.5f;
+		gameScene_->CreateHitEffect(effectPos, playerRot);
 	}
 }
