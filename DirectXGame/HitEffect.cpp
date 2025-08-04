@@ -1,4 +1,3 @@
-// HitEffect.cpp
 #include "HitEffect.h"
 #include "mathStruct.h"
 
@@ -7,9 +6,13 @@ Model* HitEffect::model_ = nullptr;
 Camera* HitEffect::camera_ = nullptr;
 
 HitEffect* HitEffect::Create(const Vector3& position, const Vector3& rotation) {
+	// インスタンスを生成
 	HitEffect* instance = new HitEffect();
+	// newの失敗を検出
 	assert(instance);
+	// インスタンスの初期化
 	instance->Initialize(position, rotation);
+	// 初期化したインスタンスを返す
 	return instance;
 }
 
@@ -26,15 +29,15 @@ void HitEffect::Initialize(const Vector3& position, const Vector3& rotation) {
 	circleWorldTransform_.translation_ = position;
 	circleWorldTransform_.rotation_ = rotation;
 	circleWorldTransform_.rotation_.y += 3.14159f;
-	circleWorldTransform_.translation_.z -= 2.2f;
+	circleWorldTransform_.translation_.z -= 2.5f;
 
-	// 楕円エフェクトの初期化
-	for (WorldTransform& worldTransform : ellipseWorldTransforms_) {
+	// 尖った筋エフェクトの初期化
+	for (WorldTransform& worldTransform : streakWorldTransforms_) {
 		worldTransform.Initialize();
-		worldTransform.scale_ = {1.5f, 0.5f, 1.0f};                                   // 楕円の長さを設定
-		worldTransform.rotation_ = {0.0f, 0.0f, rotationDistribution(randomEngine_)}; // Z軸でランダムに回転
+		worldTransform.rotation_ = circleWorldTransform_.rotation_;
+		worldTransform.rotation_.x += rotationDistribution(randomEngine_);
 		worldTransform.translation_ = position;
-		worldTransform.translation_.z -= 0.2f;
+		worldTransform.translation_.z -= 2.5f;
 	}
 
 	objectColor_.Initialize();
@@ -50,35 +53,34 @@ void HitEffect::Update() {
 	counter_++;
 
 	switch (state_) {
-	case State::kSpread: // 広がる処理
-	{
+	case State::kSpread: {
 		float t = static_cast<float>(counter_) / kSpreadDuration;
-		// 円と楕円のスケールをアニメーション
+		// 円は広がる
 		circleWorldTransform_.scale_ = {EaseOut(0.0f, 1.0f, t), EaseOut(0.0f, 1.0f, t), 1.0f};
-		for (WorldTransform& worldTransform : ellipseWorldTransforms_) {
-			worldTransform.scale_.x = EaseOut(0.0f, 1.5f, t);
-			worldTransform.scale_.y = EaseOut(0.0f, 0.5f, t);
+		// 筋は伸びてから細くなる
+		for (WorldTransform& worldTransform : streakWorldTransforms_) {
+			worldTransform.scale_.x = EaseOut(0.0f, 100.0f, t); // 長さ
+			worldTransform.scale_.y = EaseIn(10.0f, 0.0f, t);  // 太さ
 		}
 		if (counter_ >= kSpreadDuration) {
 			state_ = State::kFade;
-			counter_ = 0; // カウンターリセット
+			counter_ = 0;
 		}
 	} break;
-	case State::kFade: // 消える処理
-	{
+	case State::kFade: {
 		float t = static_cast<float>(counter_) / kFadeDuration;
 		float alpha = EaseOut(1.0f, 0.0f, t);
 		objectColor_.SetColor({1, 1, 1, alpha});
 		if (counter_ >= kFadeDuration) {
-			state_ = State::kDead; // 死亡状態へ
+			state_ = State::kDead;
 		}
 	} break;
 	}
 
-	// 全オブジェクトの行列を更新
+	// 行列更新
 	circleWorldTransform_.matWorld_ = MakeAffineMatrix(circleWorldTransform_.scale_, circleWorldTransform_.rotation_, circleWorldTransform_.translation_);
 	circleWorldTransform_.TransferMatrix();
-	for (WorldTransform& worldTransform : ellipseWorldTransforms_) {
+	for (WorldTransform& worldTransform : streakWorldTransforms_) {
 		worldTransform.matWorld_ = MakeAffineMatrix(worldTransform.scale_, worldTransform.rotation_, worldTransform.translation_);
 		worldTransform.TransferMatrix();
 	}
@@ -91,8 +93,8 @@ void HitEffect::Draw() {
 	Model::PreDraw(DirectXCommon::GetInstance()->GetCommandList());
 	// 円を描画
 	model_->Draw(circleWorldTransform_, *camera_, &objectColor_);
-	// 楕円を描画
-	for (WorldTransform& worldTransform : ellipseWorldTransforms_) {
+	// 筋を描画
+	for (WorldTransform& worldTransform : streakWorldTransforms_) {
 		model_->Draw(worldTransform, *camera_, &objectColor_);
 	}
 	Model::PostDraw();

@@ -33,7 +33,7 @@ private:
 	static Camera* camera_;
 
 	// --- 定数 ---
-	static inline const uint32_t kNumEllipses = 5;     // 楕円の個数
+	static inline const uint32_t kNumStreaks = 2;      // 筋の個数
 	static inline const uint32_t kSpreadDuration = 30; // 広がる時間
 	static inline const uint32_t kFadeDuration = 60;   // 消える時間
 
@@ -43,7 +43,7 @@ private:
 	ObjectColor objectColor_; // 色変更用
 
 	WorldTransform circleWorldTransform_;                             // 円のトランスフォーム
-	std::array<WorldTransform, kNumEllipses> ellipseWorldTransforms_; // 楕円のトランスフォーム
+	std::array<WorldTransform, kNumStreaks> streakWorldTransforms_;
 
 	// 乱数生成用
 	std::mt19937_64 randomEngine_;
