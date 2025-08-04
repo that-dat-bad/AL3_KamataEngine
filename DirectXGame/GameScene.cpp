@@ -10,6 +10,7 @@ GameScene::~GameScene() {
 	delete blockModel_;
 	delete skydomeModel_;
 	delete skydome_;
+	delete attackFxModel_;
 	for (auto& row : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : row) {
 			delete worldTransformBlock; // 各ワールド変換を解放
@@ -41,6 +42,7 @@ void GameScene::Initialize() {
 	skydomeModel_ = Model::CreateFromOBJ("ball", true);
 	enemyModel_ = Model::CreateFromOBJ("enemy", true);
 	deathParticleModel_ = Model::CreateFromOBJ("deathParticle", true);
+	attackFxModel_ = Model::CreateFromOBJ("attackFX", true);
 
 	// マップチップフィールドの生成と初期化
 	mapChipField_ = new MapChipField;
@@ -52,7 +54,7 @@ void GameScene::Initialize() {
 	// 座標をマップチップ番号で指定
 	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(0, 18);
 	// 自キャラの初期化
-	player_->Initialize(playerModel_, &camera_, playerPosition);
+	player_->Initialize(playerModel_, attackFxModel_, &camera_, playerPosition);
 
 	player_->SetMapChipField(mapChipField_);
 

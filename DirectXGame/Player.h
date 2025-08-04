@@ -12,7 +12,7 @@ class Enemy;
 class Player {
 public:
 	// --- 基本関数 ---
-	void Initialize(Model* model, Camera* camera, const Vector3& position);
+	void Initialize(Model* model, Model* modelAttack, Camera* camera, const Vector3& position);
 	void Update();
 	void Draw();
 
@@ -38,6 +38,15 @@ private:
 	};
 	Behavior behavior_ = Behavior::kRoot;
 	Behavior behaviorRequest_ = Behavior::kUnknown;
+
+	// 攻撃フェーズ（サブフェーズ）
+	enum class AttackPhase {
+		kAnticipation,  // 溜め
+		kDash,          // 突進
+		kFollowThrough, // 余韻
+	};
+	// 現在の攻撃フェーズ
+	AttackPhase attackPhase_;
 
 	// --- 各ビヘイビアの処理関数 ---
 	void BehaviorRootInitialize();
@@ -69,7 +78,9 @@ private:
 
 	// --- 物理挙動・状態に関する変数 ---
 	WorldTransform worldTransform_;
+	WorldTransform worldTransformAttack_;
 	Model* model_ = nullptr;
+	Model* modelAttack_ = nullptr;
 	Camera* camera_ = nullptr;
 	Vector3 velocity_ = {};
 	bool isDead_ = false;
@@ -94,4 +105,8 @@ private:
 	static inline const float kWidth = 1.8f;
 	static inline const float kHeight = 1.8f;
 	static inline const float kAttackDashSpeed = 0.8f;
+	static inline const uint32_t kAttackAnticipationDuration = 10;
+	static inline const uint32_t kAttackDashDuration = 10;
+	static inline const uint32_t kAttackFollowThroughDuration = 30;
+	static inline const Vector3 kAttackVelocity = {1.5f, 0.0f, 0.0f};
 };

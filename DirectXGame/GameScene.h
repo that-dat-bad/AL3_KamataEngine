@@ -60,7 +60,7 @@ private:
 	Model* skydomeModel_ = nullptr;
 	Model* enemyModel_ = nullptr;
 	Model* deathParticleModel_ = nullptr;
-
+	Model* attackFxModel_ = nullptr;
 	std::vector<std::vector<KamataEngine::WorldTransform*>> worldTransformBlocks_;
 
 	// デバックカメラ無効
