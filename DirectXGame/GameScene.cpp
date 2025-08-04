@@ -293,6 +293,16 @@ void GameScene::UpdatePlayPhase() {
 	for (HitEffect* effect : hitEffects_) {
 		effect->Update();
 	}
+	// デスフラグの立ったヒットエフェクトを削除
+	hitEffects_.remove_if([](HitEffect* effect) {
+		if (effect->IsDead()) {
+			delete effect;
+			return true;
+			
+		}
+		return false;
+		
+	});
 	// カメラコントローラーの更新
 	cameraController_->Update();
 	// 全ての当たり判定
