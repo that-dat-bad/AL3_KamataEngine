@@ -210,6 +210,10 @@ void Player::Draw() {
 }
 
 void Player::OnCollision(const Enemy* enemy) {
+	// 攻撃中はダメージを受けない
+	if (IsAttack()) {
+		return;
+	}
 	(void)enemy;
 	isDead_ = true;
 }

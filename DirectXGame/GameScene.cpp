@@ -219,6 +219,9 @@ void GameScene::CheckAllCollisions() {
 	aabb1 = player_->GetAABB();
 
 	for (Enemy* enemy : enemies_) {
+		if (enemy->IsCollisionDisabled()) {
+			continue;
+		}
 		aabb2 = enemy->GetAABB();
 		if (AABBCollision(aabb1, aabb2)) {
 			player_->OnCollision(enemy);
@@ -257,6 +260,15 @@ void GameScene::UpdatePlayPhase() {
 	for (Enemy* enemy : enemies_) {
 		enemy->Update();
 	}
+	enemies_.remove_if([](Enemy* enemy) {
+		if (enemy->IsDead()) {
+			delete enemy;
+			return true;
+			
+		}
+		return false;
+		
+	});
 	// カメラコントローラーの更新
 	cameraController_->Update();
 	// 全ての当たり判定

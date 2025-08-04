@@ -1,37 +1,62 @@
 #include "Enemy.h"
+#include "Player.h"
 #include "mathStruct.h"
 
 void Enemy::Initialize(Model* model, Camera* camera, const Vector3& position) {
-	// nullポインタチェック
 	assert(model);
-	// 引数として受け取ったデータをメンバ変数に記録する
 	model_ = model;
 	camera_ = camera;
-	// ワールド変換の初期化
 	worldTransform_.Initialize();
 	worldTransform_.translation_ = position;
 	worldTransform_.rotation_.y = 3.0f * std::numbers::pi_v<float> / 2.0f;
-
 	velocity_ = {kWalkSpeed, 0.0f, 0.0f};
 	walkTimer_ = 0.0f;
 }
 
 void Enemy::Update() {
-	walkTimer_ += 1.0f / 60.0f; // タイマーを更新
+	// ビヘイビアの遷移処理
+	if (behaviorRequest_ != behavior_) {
+		behavior_ = behaviorRequest_;
+	}
 
-worldTransform_.rotation_.x = (std::sin(walkTimer_ * (std::numbers::pi_v<float> / kWalkMotionTime)) * (std::numbers::pi_v<float> / 4.0f)) / 2.0f + (std::numbers::pi_v<float> / 8.0f);
-	// 移動
-	worldTransform_.translation_ += velocity_;
+	// ビヘイビアごとの更新処理
+	switch (behavior_) {
+	case Behavior::kWalk:
+		BehaviorWalkUpdate();
+		break;
+	case Behavior::kDeath:
+		BehaviorDeathUpdate();
+		break;
+	}
 
 	worldTransform_.matWorld_ = MakeAffineMatrix(worldTransform_.scale_, worldTransform_.rotation_, worldTransform_.translation_);
 	worldTransform_.TransferMatrix();
 }
 
 void Enemy::Draw() {
-	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
-	Model::PreDraw(dxCommon->GetCommandList());
+	Model::PreDraw(DirectXCommon::GetInstance()->GetCommandList());
 	model_->Draw(worldTransform_, *camera_);
 	Model::PostDraw();
+}
+
+void Enemy::BehaviorWalkUpdate() {
+	walkTimer_ += 1.0f / 60.0f;
+	worldTransform_.rotation_.x = (std::sin(walkTimer_ * (std::numbers::pi_v<float> / kWalkMotionTime)) * (std::numbers::pi_v<float> / 4.0f)) / 2.0f + (std::numbers::pi_v<float> / 8.0f);
+	worldTransform_.translation_ += velocity_;
+}
+
+void Enemy::BehaviorDeathUpdate() {
+	walkTimer_++;
+
+	float t_y = static_cast<float>(walkTimer_) / kDeathDuration;
+	worldTransform_.rotation_.y = EaseOut(0.0f, std::numbers::pi_v<float> * 4.0f, t_y);
+
+	float t_x = static_cast<float>(walkTimer_) / kDeathDuration;
+	worldTransform_.rotation_.x = EaseOut(0.0f, std::numbers::pi_v<float> / 2.0f, t_x);
+
+	if (walkTimer_ >= kDeathDuration) {
+		isDead_ = true;
+	}
 }
 
 AABB Enemy::GetAABB() {
@@ -54,4 +79,13 @@ Vector3 Enemy::GetWorldPosition() {
 	return worldPos;
 }
 
-void Enemy::OnCollision(const Player* player) { (void)player; }
+void Enemy::OnCollision(const Player* player) {
+	if (behavior_ == Behavior::kDeath) {
+		return;
+	}
+	if (player->IsAttack()) {
+		behaviorRequest_ = Behavior::kDeath;
+		walkTimer_ = 0;
+		isCollisionDisabled_ = true;
+	}
+}

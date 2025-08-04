@@ -22,6 +22,7 @@ public:
 	Vector3 GetWorldPosition();
 	AABB GetAABB();
 	bool IsDead() const { return isDead_; }
+	bool IsAttack() const { return behavior_ == Behavior::kAttack; }
 
 	// --- セッター ---
 	void SetMapChipField(MapChipField* mapChipField) { mapChipField_ = mapChipField; }

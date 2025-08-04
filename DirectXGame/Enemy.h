@@ -10,38 +10,40 @@ class Player;
 class Enemy {
 public:
 	void Initialize(Model* model, Camera* camera, const Vector3& position);
-
 	void Update();
-
 	void Draw();
-
 	AABB GetAABB();
-
 	Vector3 GetWorldPosition();
-
 	void OnCollision(const Player* player);
+	bool IsDead() const { return isDead_; }
+	bool IsCollisionDisabled() const { return isCollisionDisabled_; }
 
 private:
-	static inline const float kWalkSpeed = -0.1f; // 敵の歩行速度
+	// --- 振る舞い（ビヘイビア） ---
+	enum class Behavior {
+		kWalk,  // 歩行
+		kDeath, // デス演出
+	};
+	Behavior behavior_ = Behavior::kWalk;
+	Behavior behaviorRequest_ = Behavior::kWalk;
 
-	Vector3 velocity_ = {}; // 敵の移動速度
+	// --- 各ビヘイビアの処理関数 ---
+	void BehaviorWalkUpdate();
+	void BehaviorDeathUpdate();
 
-	static inline const float kWalkMotionAngleStart = 0.0f; // 最初の角度
-
-	static inline const float kWalkMotionAngleEnd = std::numbers::pi_v<float> / 2.0f; // 最後の角度
-
-	static inline const float kWalkMotionTime = 1.0f; // 歩行モーションの周期
-
-	static inline const float kWidth = 1.9f;
-	static inline const float kHeight = 1.9f;
-
-	// 経過時間
+	// --- 状態変数 ---
+	bool isDead_ = false;
+	bool isCollisionDisabled_ = false;
+	WorldTransform worldTransform_;
+	Model* model_ = nullptr;
+	Camera* camera_ = nullptr;
+	Vector3 velocity_ = {};
 	float walkTimer_ = 0.0f;
 
-	// ワールド変換データ
-	WorldTransform worldTransform_;
-	// 3Dモデルデータ
-	Model* model_ = nullptr;
-
-	Camera* camera_ = nullptr;
+	// --- 定数 ---
+	static inline const float kWalkSpeed = -0.1f;
+	static inline const float kWalkMotionTime = 1.0f;
+	static inline const float kWidth = 1.9f;
+	static inline const float kHeight = 1.9f;
+	static inline const uint32_t kDeathDuration = 60; // デス演出の時間
 };
