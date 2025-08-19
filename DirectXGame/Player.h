@@ -30,6 +30,12 @@ public:
 	// --- 衝突処理 ---
 	void OnCollision(const Enemy* enemy);
 
+	enum class PlayerColor {
+		kNormal, // 通常色
+		kRed,    // 赤
+		kBlue,   // 青
+	};
+
 private:
 	// --- 振る舞い（ビヘイビア） ---
 	enum class Behavior {
@@ -89,6 +95,10 @@ private:
 	float turnFIrstRotationY_ = 0.0f;
 	float turnTimer_ = 0.0f;
 	MapChipField* mapChipField_ = nullptr;
+
+	//---色に関する変数---
+	PlayerColor currentColor_ = PlayerColor::kNormal;
+	ObjectColor objectColor_; // モデルの色
 
 	// --- 定数 ---
 	static inline const float kAcceleration = 0.03f;

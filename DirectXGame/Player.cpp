@@ -16,6 +16,7 @@ void Player::Initialize(Model* model, Model* modelAttackRight, Model* modelAttac
 	worldTransformAttack_.Initialize();
 	worldTransform_.translation_ = position;
 	worldTransform_.rotation_.y = std::numbers::pi_v<float> / 2.0f;
+	objectColor_.Initialize();
 
 	BehaviorRootInitialize();
 }
@@ -56,6 +57,30 @@ void Player::BehaviorRootInitialize() {
 }
 
 void Player::BehaviorRootUpdate() {
+	// 色切り替え入力
+	if (Input::GetInstance()->TriggerKey(DIK_1)) {
+		currentColor_ = PlayerColor::kNormal;
+	}
+	if (Input::GetInstance()->TriggerKey(DIK_2)) {
+		currentColor_ = PlayerColor::kRed;
+	}
+	if (Input::GetInstance()->TriggerKey(DIK_3)) {
+		currentColor_ = PlayerColor::kBlue;
+	}
+
+	switch (currentColor_) {
+	case PlayerColor::kRed:
+		objectColor_.SetColor({1.0f, 0.2f, 0.2f, 1.0f}); // 赤色
+		break;
+	case PlayerColor::kBlue:
+		objectColor_.SetColor({0.2f, 0.2f, 1.0f, 1.0f}); // 青色
+		break;
+	case PlayerColor::kNormal:
+	default:
+		objectColor_.SetColor({1.0f, 1.0f, 1.0f, 1.0f}); // 通常色 (白)
+		break;
+	}
+
 	// 1. 入力と物理演算
 	if (onGround_) {
 		velocity_.y = 0;
@@ -181,7 +206,7 @@ void Player::BehaviorAttackUpdate() {
 
 void Player::Draw() {
 	Model::PreDraw(DirectXCommon::GetInstance()->GetCommandList());
-	model_->Draw(worldTransform_, *camera_);
+	model_->Draw(worldTransform_, *camera_, &objectColor_);
 
 	if (behavior_ == Behavior::kAttack) {
 

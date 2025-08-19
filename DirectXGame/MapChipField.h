@@ -16,6 +16,8 @@ public:
 	enum MapChipType {
 		kBlank,
 		kBlock,
+		kBlock_Red,
+		kBlock_Blue,
 	};
 
 	struct MapChipData {
