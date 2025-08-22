@@ -11,6 +11,14 @@ class Enemy;
 
 class Player {
 public:
+	// --- 色の状態 ---
+	enum class PlayerColor {
+		kNormal, // 通常色
+		kRed,    // 赤
+		kGreen,  // 緑
+		kBlue,   // 青
+	};
+
 	// --- 基本関数 ---
 	void Initialize(Model* model, Model* modelAttackRight, Model* modelAttackLeft, uint32_t textureHandle, Camera* camera, const Vector3& position);
 	void Update();
@@ -23,18 +31,13 @@ public:
 	AABB GetAABB();
 	bool IsDead() const { return isDead_; }
 	bool IsAttack() const { return behavior_ == Behavior::kAttack; }
+	PlayerColor GetCurrentColor() const { return currentColor_; }
 
 	// --- セッター ---
 	void SetMapChipField(MapChipField* mapChipField) { mapChipField_ = mapChipField; }
 
 	// --- 衝突処理 ---
 	void OnCollision(const Enemy* enemy);
-
-	enum class PlayerColor {
-		kNormal, // 通常色
-		kRed,    // 赤
-		kBlue,   // 青
-	};
 
 private:
 	// --- 振る舞い（ビヘイビア） ---
@@ -68,6 +71,10 @@ private:
 		Vector3 moveVector;
 	};
 	enum Corner { kRightBottom, kLeftBottom, kRightTop, kLeftTop, kNumCorner };
+
+	bool isMapChipSolid(MapChipField::MapChipType type);
+	void ResolveStuckState();
+
 	void MapCollider(CollisionMapInfo& info);
 	void CeilingCollision(CollisionMapInfo& info);
 	Vector3 CornerPosition(const Vector3& center, Corner corner);
@@ -96,9 +103,8 @@ private:
 	float turnTimer_ = 0.0f;
 	MapChipField* mapChipField_ = nullptr;
 
-	//---色に関する変数---
 	PlayerColor currentColor_ = PlayerColor::kNormal;
-	ObjectColor objectColor_; // モデルの色
+	ObjectColor objectColor_;
 
 	// --- 定数 ---
 	static inline const float kAcceleration = 0.03f;

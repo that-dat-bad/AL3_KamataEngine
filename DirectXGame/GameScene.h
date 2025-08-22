@@ -9,6 +9,14 @@
 #include "Player.h"
 #include "Skydome.h"
 #include <vector>
+
+// ブロックのデータをまとめる構造体
+struct BlockData {
+	WorldTransform* worldTransform = nullptr;
+	ObjectColor* objectColor = nullptr;
+	MapChipField::MapChipType type = MapChipField::MapChipType::kBlank; // ★ブロックの種類を保存
+};
+
 class GameScene {
 public:
 	~GameScene();
@@ -65,7 +73,10 @@ private:
 	Model* attackFxModelRight_ = nullptr; // 右向き用
 	Model* attackFxModelLeft_ = nullptr;
 	Model* hitEffectModel_ = nullptr;
-	std::vector<std::vector<KamataEngine::WorldTransform*>> worldTransformBlocks_;
+
+	// ブロックのデータ
+	std::vector<std::vector<BlockData>> blocks_;
+
 	uint32_t textureHandleAttackFX_ = 0;
 	// デバックカメラ無効
 	bool isDebugCameraActive_ = false;

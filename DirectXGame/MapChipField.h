@@ -1,23 +1,22 @@
 #pragma once
+#include "KamataEngine.h"
 #include <stdint.h>
 #include <string>
 #include <vector>
-#include "KamataEngine.h"
 
 using namespace KamataEngine;
-
-
-
-
-
 
 class MapChipField {
 public:
 	enum MapChipType {
-		kBlank,
-		kBlock,
-		kBlock_Red,
-		kBlock_Blue,
+		kBlank,            // 0
+		kBlock,            // 1 (通常ブロック)
+		kBlock_Red,        // 2 (赤ブロック)
+		kBlock_Green,      // 3 (緑ブロック)
+		kBlock_Blue,       // 4 (青ブロック)
+		kCurtain_SetRed,   // 5
+		kCurtain_SetGreen, // 6
+		kCurtain_SetBlue,  // 7
 	};
 
 	struct MapChipData {
@@ -36,7 +35,6 @@ public:
 	};
 
 public:
-
 	MapChipData mapChipData_;
 
 	void ResetMapChipData();
@@ -47,7 +45,7 @@ public:
 
 	Vector3 GetMapChipPositionByIndex(uint32_t xIndex, uint32_t yIndex);
 
-	uint32_t GetNumBlockVertical() { return kNumBlockVertical;}
+	uint32_t GetNumBlockVertical() { return kNumBlockVertical; }
 
 	uint32_t GetNumBlockHorizontal() { return kNumBlockHorizontal; }
 

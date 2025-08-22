@@ -1,8 +1,8 @@
 #include "GameScene.h"
-using namespace KamataEngine;
+#include "HitEffect.h"
 #include "mathStruct.h"
 #include <random>
-#include "HitEffect.h"
+using namespace KamataEngine;
 
 // デストラクタ
 GameScene::~GameScene() {
@@ -14,16 +14,17 @@ GameScene::~GameScene() {
 	delete attackFxModelRight_;
 	delete attackFxModelLeft_;
 	delete hitEffectModel_;
-	for (auto& row : worldTransformBlocks_) {
-		for (WorldTransform* worldTransformBlock : row) {
-			delete worldTransformBlock; // 各ワールド変換を解放
+	for (auto& row : blocks_) {
+		for (const BlockData& blockData : row) {
+			delete blockData.worldTransform; // 各ワールド変換を解放
+			delete blockData.objectColor;    // 色情報も解放
 		}
 		row.clear(); // 行をクリア
 	}
-	worldTransformBlocks_.clear();
+	blocks_.clear();
 	delete debugCamera_; // デバッグカメラの解放
 	delete mapChipField_;
-	delete cameraController_; // カメラコントローラの解放
+	delete cameraController_; // カメラコントローラを解放
 
 	for (Enemy* enemy : enemies_) {
 		delete enemy;
@@ -64,14 +65,14 @@ void GameScene::Initialize() {
 	// 自キャラ生成
 	player_ = new Player();
 	// 座標をマップチップ番号で指定
-	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(0, 18);
+	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(1, 18);
 	// 自キャラの初期化
 	player_->Initialize(playerModel_, attackFxModelRight_, attackFxModelLeft_, textureHandleAttackFX_, &camera_, playerPosition);
 
 	player_->SetMapChipField(mapChipField_);
 
 	// 敵キャラ生成
-	kEnemyCount_ = 2; // 敵キャラの数を定義
+	kEnemyCount_ = 0; // 敵キャラの数を定義
 
 	for (int32_t i = 0; i < kEnemyCount_; i++) {
 		Enemy* newEnemy = new Enemy();
@@ -79,7 +80,7 @@ void GameScene::Initialize() {
 		Vector3 enemyPosition = {(float)(i + 1) * 20, 2.0f, 0.0f};
 
 		newEnemy->Initialize(enemyModel_, &camera_, enemyPosition);
-		newEnemy->SetGameScene(this); 
+		newEnemy->SetGameScene(this);
 		enemies_.push_back(newEnemy);
 	}
 
@@ -161,10 +162,45 @@ void GameScene::Draw() {
 
 	// --- ブロック ---
 	Model::PreDraw(DirectXCommon::GetInstance()->GetCommandList());
-	for (auto& row : worldTransformBlocks_) {
-		for (WorldTransform* block : row) {
-			if (block) {
-				blockModel_->Draw(*block, camera_);
+	Player::PlayerColor playerColor = player_->GetCurrentColor(); // プレイヤーの現在の色を取得
+	for (auto& row : blocks_) {
+		for (const BlockData& blockData : row) {
+			if (blockData.worldTransform) {
+				// ブロックが見えるかどうかを判定
+				bool isVisible = false;
+
+				// ★★★ここから表示ルールの修正★★★
+
+				// 最初に、マップチップがカーテンかどうかをチェック
+				if (blockData.type == MapChipField::MapChipType::kCurtain_SetRed || blockData.type == MapChipField::MapChipType::kCurtain_SetGreen ||
+				    blockData.type == MapChipField::MapChipType::kCurtain_SetBlue) {
+					// カーテンは常に見える
+					isVisible = true;
+				}
+				// カーテンでない場合（通常のブロックか、色のブロックの場合）
+				else {
+					// プレイヤーが通常色の時は、通常ブロックのみ見える
+					if (playerColor == Player::PlayerColor::kNormal) {
+						isVisible = (blockData.type == MapChipField::MapChipType::kBlock);
+					}
+					// プレイヤーが特定の色を持つ時は、通常ブロックと自分の色のブロックが見える
+					else {
+						if (blockData.type == MapChipField::MapChipType::kBlock) {
+							isVisible = true;
+						} else if (blockData.type == MapChipField::MapChipType::kBlock_Red) {
+							isVisible = (playerColor == Player::PlayerColor::kRed);
+						} else if (blockData.type == MapChipField::MapChipType::kBlock_Green) {
+							isVisible = (playerColor == Player::PlayerColor::kGreen);
+						} else if (blockData.type == MapChipField::MapChipType::kBlock_Blue) {
+							isVisible = (playerColor == Player::PlayerColor::kBlue);
+						}
+					}
+				}
+
+
+				if (isVisible) {
+					blockModel_->Draw(*blockData.worldTransform, camera_, blockData.objectColor);
+				}
 			}
 		}
 	}
@@ -205,25 +241,56 @@ void GameScene::GenerateBlocks() {
 	uint32_t numBlockVirtical = mapChipField_->GetNumBlockVertical();
 	uint32_t numBlockHorizontal = mapChipField_->GetNumBlockHorizontal();
 
-	worldTransformBlocks_.resize(numBlockVirtical);
+	blocks_.resize(numBlockVirtical);
 	for (uint32_t i = 0; i < numBlockVirtical; i++) {
-		worldTransformBlocks_[i].resize(numBlockHorizontal);
+		blocks_[i].resize(numBlockHorizontal);
 	}
 
 	// ブロックの生成
 	for (uint32_t i = 0; i < numBlockVirtical; i++) {
 		for (uint32_t j = 0; j < numBlockHorizontal; j++) {
-			// MapChipField からマップチップのタイプを取得
 			MapChipField::MapChipType mapChipType = mapChipField_->GetMapChipTypeByIndex(j, i);
 
+			// ★空白以外のチップはすべて描画オブジェクトを生成する
 			if (mapChipType != MapChipField::MapChipType::kBlank) {
-				worldTransformBlocks_[i][j] = new WorldTransform();
-				worldTransformBlocks_[i][j]->Initialize();
-				worldTransformBlocks_[i][j]->translation_.x = kBlockWidth * j;
-				worldTransformBlocks_[i][j]->translation_.y = kBlockHeight * (numBlockVirtical - 1 - i);
-			} else {
-				// ブロックがない場合は nullptr を設定
-				worldTransformBlocks_[i][j] = nullptr;
+				WorldTransform* newWorldTransform = new WorldTransform();
+				newWorldTransform->Initialize();
+				newWorldTransform->translation_.x = kBlockWidth * j;
+				newWorldTransform->translation_.y = kBlockHeight * (numBlockVirtical - 1 - i);
+
+				ObjectColor* newObjectColor = new ObjectColor();
+				newObjectColor->Initialize();
+
+				// マップチップの種類に応じて色と透明度を設定
+				switch (mapChipType) {
+				// --- ブロック（不透明） ---
+				case MapChipField::MapChipType::kBlock_Red:
+					newObjectColor->SetColor({1.0f, 0.2f, 0.2f, 1.0f}); // 赤色
+					break;
+				case MapChipField::MapChipType::kBlock_Green:
+					newObjectColor->SetColor({0.2f, 1.0f, 0.2f, 1.0f}); // 緑色
+					break;
+				case MapChipField::MapChipType::kBlock_Blue:
+					newObjectColor->SetColor({0.2f, 0.2f, 1.0f, 1.0f}); // 青色
+					break;
+				case MapChipField::MapChipType::kBlock:
+					newObjectColor->SetColor({1.0f, 1.0f, 1.0f, 1.0f}); // 通常色 (白)
+					break;
+				// --- カーテン（半透明） ---
+				case MapChipField::MapChipType::kCurtain_SetRed:
+					newObjectColor->SetColor({1.0f, 0.2f, 0.2f, 0.5f}); // 赤色・半透明
+					break;
+				case MapChipField::MapChipType::kCurtain_SetGreen:
+					newObjectColor->SetColor({0.2f, 1.0f, 0.2f, 0.5f}); // 緑色・半透明
+					break;
+				case MapChipField::MapChipType::kCurtain_SetBlue:
+					newObjectColor->SetColor({0.2f, 0.2f, 1.0f, 0.5f}); // 青色・半透明
+					break;
+				}
+
+				blocks_[i][j].worldTransform = newWorldTransform;
+				blocks_[i][j].objectColor = newObjectColor;
+				blocks_[i][j].type = mapChipType;
 			}
 		}
 	}
@@ -258,11 +325,11 @@ void GameScene::UpdateFadeInPhase() {
 	for (Enemy* enemy : enemies_) {
 		enemy->Update();
 	}
-	for (auto& row : worldTransformBlocks_) {
-		for (WorldTransform* block : row) {
-			if (block) {
-				block->matWorld_ = MakeAffineMatrix(block->scale_, block->rotation_, block->translation_);
-				block->TransferMatrix();
+	for (auto& row : blocks_) {
+		for (const BlockData& blockData : row) {
+			if (blockData.worldTransform) {
+				blockData.worldTransform->matWorld_ = MakeAffineMatrix(blockData.worldTransform->scale_, blockData.worldTransform->rotation_, blockData.worldTransform->translation_);
+				blockData.worldTransform->TransferMatrix();
 			}
 		}
 	}
@@ -284,10 +351,8 @@ void GameScene::UpdatePlayPhase() {
 		if (enemy->IsDead()) {
 			delete enemy;
 			return true;
-			
 		}
 		return false;
-		
 	});
 
 	for (HitEffect* effect : hitEffects_) {
@@ -298,21 +363,19 @@ void GameScene::UpdatePlayPhase() {
 		if (effect->IsDead()) {
 			delete effect;
 			return true;
-			
 		}
 		return false;
-		
 	});
 	// カメラコントローラーの更新
 	cameraController_->Update();
 	// 全ての当たり判定
 	CheckAllCollisions();
 	// ブロックの更新
-	for (auto& row : worldTransformBlocks_) {
-		for (WorldTransform* block : row) {
-			if (block) {
-				block->matWorld_ = MakeAffineMatrix(block->scale_, block->rotation_, block->translation_);
-				block->TransferMatrix();
+	for (auto& row : blocks_) {
+		for (const BlockData& blockData : row) {
+			if (blockData.worldTransform) {
+				blockData.worldTransform->matWorld_ = MakeAffineMatrix(blockData.worldTransform->scale_, blockData.worldTransform->rotation_, blockData.worldTransform->translation_);
+				blockData.worldTransform->TransferMatrix();
 			}
 		}
 	}
@@ -337,11 +400,11 @@ void GameScene::UpdateDeathPhase() {
 	// カメラの更新 (カメラコントローラーは呼ばない)
 	camera_.UpdateMatrix();
 	// ブロックの更新
-	for (auto& row : worldTransformBlocks_) {
-		for (WorldTransform* block : row) {
-			if (block) {
-				block->matWorld_ = MakeAffineMatrix(block->scale_, block->rotation_, block->translation_);
-				block->TransferMatrix();
+	for (auto& row : blocks_) {
+		for (const BlockData& blockData : row) {
+			if (blockData.worldTransform) {
+				blockData.worldTransform->matWorld_ = MakeAffineMatrix(blockData.worldTransform->scale_, blockData.worldTransform->rotation_, blockData.worldTransform->translation_);
+				blockData.worldTransform->TransferMatrix();
 			}
 		}
 	}

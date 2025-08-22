@@ -8,10 +8,14 @@
 namespace {
 
 std::map<std::string, MapChipField::MapChipType> mapchipTable = {
-    {"0", MapChipField::MapChipType::kBlank     },
-    {"1", MapChipField::MapChipType::kBlock     },
-    {"2", MapChipField::MapChipType::kBlock_Red },
-    {"3", MapChipField::MapChipType::kBlock_Blue}
+    {"0", MapChipField::MapChipType::kBlank           },
+    {"1", MapChipField::MapChipType::kBlock           },
+    {"2", MapChipField::MapChipType::kBlock_Red       },
+    {"3", MapChipField::MapChipType::kBlock_Green     },
+    {"4", MapChipField::MapChipType::kBlock_Blue      },
+    {"5", MapChipField::MapChipType::kCurtain_SetRed  },
+    {"6", MapChipField::MapChipType::kCurtain_SetGreen},
+    {"7", MapChipField::MapChipType::kCurtain_SetBlue }
 };
 
 }
@@ -88,7 +92,7 @@ MapChipField::Rect MapChipField::GetRectByIndex(uint32_t xIndex, uint32_t yIndex
 	Vector3 center = GetMapChipPositionByIndex(xIndex, yIndex);
 
 	Rect rect;
-	rect.left = center.x - kBlockWidth / 2.0f; 
+	rect.left = center.x - kBlockWidth / 2.0f; //
 	rect.right = center.x + kBlockWidth / 2.0f;
 	rect.bottom = center.y - kBlockHeight / 2.0f;
 	rect.top = center.y + kBlockHeight / 2.0f;
