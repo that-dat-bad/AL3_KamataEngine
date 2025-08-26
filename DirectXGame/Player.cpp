@@ -242,6 +242,9 @@ AABB Player::GetAABB() {
 }
 
 bool Player::isMapChipSolid(MapChipField::MapChipType type) {
+	if (type == MapChipField::MapChipType::kLockedDoor) {
+		return keyCount_ <= 0;
+	}
 	if (currentColor_ == PlayerColor::kNormal) {
 		return (type == MapChipField::MapChipType::kBlock);
 	}
@@ -276,54 +279,65 @@ void Player::ResolveStuckState() {
 	}
 }
 
+// ★★★ここから当たり判定の修正★★★
+
 void Player::MapCollider(CollisionMapInfo& info) {
-	CeilingCollision(info);
-	GroundCollision(info);
-	LeftCollision(info);
+	// 優先順位を考慮し、判定の順番を変更
+	// 1. 左右の壁との判定を先に行う
 	RightCollision(info);
+	LeftCollision(info);
+	// 2. 次に天井との判定を行う
+	CeilingCollision(info);
+	// 3. 最後に地面との判定を行う
+	GroundCollision(info);
 }
 
 void Player::CeilingCollision(CollisionMapInfo& info) {
 	if (info.moveVector.y <= 0.0f) {
 		return;
 	}
-	Vector3 positionsNew[kNumCorner];
-	for (int i = 0; i < kNumCorner; ++i) {
-		positionsNew[i] = CornerPosition(worldTransform_.translation_ + info.moveVector, static_cast<Corner>(i));
-	}
+
+	Vector3 posLeftTopNew = CornerPosition(worldTransform_.translation_, kLeftTop) + info.moveVector;
+	Vector3 posRightTopNew = CornerPosition(worldTransform_.translation_, kRightTop) + info.moveVector;
+
 	bool hit = false;
 	float ceilingBlockBottomY = FLT_MAX;
-	MapChipField::IndexSet indexSetLeft = mapChipField_->GetMapChipIndexSetByPosition(positionsNew[kLeftTop]);
-	MapChipField::MapChipType mapChipType = mapChipField_->GetMapChipTypeByIndex(indexSetLeft.xIndex, indexSetLeft.yIndex);
-	MapChipField::MapChipType mapChipTypeNext = mapChipField_->GetMapChipTypeByIndex(indexSetLeft.xIndex, indexSetLeft.yIndex - 1);
-	if (isMapChipSolid(mapChipType) && !isMapChipSolid(mapChipTypeNext)) {
+
+	// 左上の角の判定
+	MapChipField::IndexSet indexSetLeftNew = mapChipField_->GetMapChipIndexSetByPosition(posLeftTopNew);
+	MapChipField::MapChipType typeLeft = mapChipField_->GetMapChipTypeByIndex(indexSetLeftNew.xIndex, indexSetLeftNew.yIndex);
+	MapChipField::MapChipType typeBelowLeft = mapChipField_->GetMapChipTypeByIndex(indexSetLeftNew.xIndex, indexSetLeftNew.yIndex + 1);
+	if (isMapChipSolid(typeLeft) && !isMapChipSolid(typeBelowLeft)) {
 		hit = true;
-		MapChipField::Rect blockRect = mapChipField_->GetRectByIndex(indexSetLeft.xIndex, indexSetLeft.yIndex);
+		MapChipField::Rect blockRect = mapChipField_->GetRectByIndex(indexSetLeftNew.xIndex, indexSetLeftNew.yIndex);
 		ceilingBlockBottomY = (std::min)(ceilingBlockBottomY, blockRect.bottom);
 	}
-	MapChipField::IndexSet indexSetRight = mapChipField_->GetMapChipIndexSetByPosition(positionsNew[kRightTop]);
-	mapChipType = mapChipField_->GetMapChipTypeByIndex(indexSetRight.xIndex, indexSetRight.yIndex);
-	mapChipTypeNext = mapChipField_->GetMapChipTypeByIndex(indexSetRight.xIndex, indexSetRight.yIndex - 1);
-	if (isMapChipSolid(mapChipType) && !isMapChipSolid(mapChipTypeNext)) {
+
+	// 右上の角の判定
+	MapChipField::IndexSet indexSetRightNew = mapChipField_->GetMapChipIndexSetByPosition(posRightTopNew);
+	MapChipField::MapChipType typeRight = mapChipField_->GetMapChipTypeByIndex(indexSetRightNew.xIndex, indexSetRightNew.yIndex);
+	MapChipField::MapChipType typeBelowRight = mapChipField_->GetMapChipTypeByIndex(indexSetRightNew.xIndex, indexSetRightNew.yIndex + 1);
+	if (isMapChipSolid(typeRight) && !isMapChipSolid(typeBelowRight)) {
 		hit = true;
-		MapChipField::Rect blockRect = mapChipField_->GetRectByIndex(indexSetRight.xIndex, indexSetRight.yIndex);
+		MapChipField::Rect blockRect = mapChipField_->GetRectByIndex(indexSetRightNew.xIndex, indexSetRightNew.yIndex);
 		ceilingBlockBottomY = (std::min)(ceilingBlockBottomY, blockRect.bottom);
 	}
+
 	if (hit) {
 		info.ceilingCollision = true;
 		float playerTopY = worldTransform_.translation_.y + (kHeight / 2.0f);
 		float newMoveY = ceilingBlockBottomY - playerTopY;
-		info.moveVector.y = (std::max)(0.0f, newMoveY);
+		info.moveVector.y = (std::min)(info.moveVector.y, newMoveY);
 	}
 }
 
 Vector3 Player::CornerPosition(const Vector3& center, Corner corner) {
 	Vector3 offsetTable[kNumCorner] = {
-	    {+kWidth / 2.0f, -kHeight / 2.0f, 0.0f},
-        {-kWidth / 2.0f, -kHeight / 2.0f, 0.0f},
-        {+kWidth / 2.0f, +kHeight / 2.0f, 0.0f},
-        {-kWidth / 2.0f, +kHeight / 2.0f, 0.0f}
-    };
+	    {+kWidth / 2.0f, -kHeight / 2.0f, 0.0f}, // kRightBottom
+	    {-kWidth / 2.0f, -kHeight / 2.0f, 0.0f}, // kLeftBottom
+	    {+kWidth / 2.0f, +kHeight / 2.0f, 0.0f}, // kRightTop
+	    {-kWidth / 2.0f, +kHeight / 2.0f, 0.0f}  // kLeftTop
+	};
 	return center + offsetTable[static_cast<uint32_t>(corner)];
 }
 
@@ -339,33 +353,38 @@ void Player::GroundCollision(CollisionMapInfo& info) {
 	if (info.moveVector.y >= 0.0f) {
 		return;
 	}
-	Vector3 positionsNew[kNumCorner];
-	for (int i = 0; i < kNumCorner; ++i) {
-		positionsNew[i] = CornerPosition(worldTransform_.translation_ + info.moveVector, static_cast<Corner>(i));
-	}
+
+	Vector3 posLeftBottomNew = CornerPosition(worldTransform_.translation_, kLeftBottom) + info.moveVector;
+	Vector3 posRightBottomNew = CornerPosition(worldTransform_.translation_, kRightBottom) + info.moveVector;
+
 	bool hit = false;
 	float groundBlockTopY = -FLT_MAX;
-	MapChipField::IndexSet indexSetLeftNew = mapChipField_->GetMapChipIndexSetByPosition(positionsNew[kLeftBottom]);
-	MapChipField::MapChipType mapChipType = mapChipField_->GetMapChipTypeByIndex(indexSetLeftNew.xIndex, indexSetLeftNew.yIndex);
-	MapChipField::MapChipType mapChipTypeNext = mapChipField_->GetMapChipTypeByIndex(indexSetLeftNew.xIndex, indexSetLeftNew.yIndex - 1);
-	if (isMapChipSolid(mapChipType) && !isMapChipSolid(mapChipTypeNext)) {
+
+	// 左下の角の判定
+	MapChipField::IndexSet indexSetLeftNew = mapChipField_->GetMapChipIndexSetByPosition(posLeftBottomNew);
+	MapChipField::MapChipType typeLeft = mapChipField_->GetMapChipTypeByIndex(indexSetLeftNew.xIndex, indexSetLeftNew.yIndex);
+	MapChipField::MapChipType typeAboveLeft = mapChipField_->GetMapChipTypeByIndex(indexSetLeftNew.xIndex, indexSetLeftNew.yIndex - 1);
+	if (isMapChipSolid(typeLeft) && !isMapChipSolid(typeAboveLeft)) {
 		hit = true;
 		MapChipField::Rect blockRect = mapChipField_->GetRectByIndex(indexSetLeftNew.xIndex, indexSetLeftNew.yIndex);
 		groundBlockTopY = (std::max)(groundBlockTopY, blockRect.top);
 	}
-	MapChipField::IndexSet indexSetRightNew = mapChipField_->GetMapChipIndexSetByPosition(positionsNew[kRightBottom]);
-	mapChipType = mapChipField_->GetMapChipTypeByIndex(indexSetRightNew.xIndex, indexSetRightNew.yIndex);
-	mapChipTypeNext = mapChipField_->GetMapChipTypeByIndex(indexSetRightNew.xIndex, indexSetRightNew.yIndex - 1);
-	if (isMapChipSolid(mapChipType) && !isMapChipSolid(mapChipTypeNext)) {
+
+	// 右下の角の判定
+	MapChipField::IndexSet indexSetRightNew = mapChipField_->GetMapChipIndexSetByPosition(posRightBottomNew);
+	MapChipField::MapChipType typeRight = mapChipField_->GetMapChipTypeByIndex(indexSetRightNew.xIndex, indexSetRightNew.yIndex);
+	MapChipField::MapChipType typeAboveRight = mapChipField_->GetMapChipTypeByIndex(indexSetRightNew.xIndex, indexSetRightNew.yIndex - 1);
+	if (isMapChipSolid(typeRight) && !isMapChipSolid(typeAboveRight)) {
 		hit = true;
 		MapChipField::Rect blockRect = mapChipField_->GetRectByIndex(indexSetRightNew.xIndex, indexSetRightNew.yIndex);
 		groundBlockTopY = (std::max)(groundBlockTopY, blockRect.top);
 	}
+
 	if (hit) {
 		info.groundCollision = true;
 		float playerBottomY = worldTransform_.translation_.y - (kHeight / 2.0f);
 		float newMoveY = groundBlockTopY - playerBottomY;
-		info.moveVector.y = (std::min)(0.0f, newMoveY);
+		info.moveVector.y = (std::max)(info.moveVector.y, newMoveY);
 	}
 }
 
@@ -415,19 +434,22 @@ void Player::RightCollision(CollisionMapInfo& info) {
 		Vector3 checkPos = CornerPosition(worldTransform_.translation_, corners[i]);
 		checkPos.y += (corners[i] == kRightTop) ? -kCollisionCheckMargin : kCollisionCheckMargin;
 		Vector3 checkPosNew = checkPos + info.moveVector;
-		MapChipField::IndexSet indexSet = mapChipField_->GetMapChipIndexSetByPosition(checkPosNew);
-		MapChipField::MapChipType mapChipType = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex);
-		MapChipField::MapChipType mapChipTypeNext = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex - 1, indexSet.yIndex);
-		if (isMapChipSolid(mapChipType) && !isMapChipSolid(mapChipTypeNext)) {
+
+		MapChipField::IndexSet indexSetNew = mapChipField_->GetMapChipIndexSetByPosition(checkPosNew);
+		MapChipField::MapChipType mapChipType = mapChipField_->GetMapChipTypeByIndex(indexSetNew.xIndex, indexSetNew.yIndex);
+		MapChipField::MapChipType mapChipTypeNeighbor = mapChipField_->GetMapChipTypeByIndex(indexSetNew.xIndex - 1, indexSetNew.yIndex);
+
+		if (isMapChipSolid(mapChipType) && !isMapChipSolid(mapChipTypeNeighbor)) {
 			hit = true;
-			MapChipField::Rect blockRect = mapChipField_->GetRectByIndex(indexSet.xIndex, indexSet.yIndex);
+			MapChipField::Rect blockRect = mapChipField_->GetRectByIndex(indexSetNew.xIndex, indexSetNew.yIndex);
 			blockLeftX = (std::min)(blockLeftX, blockRect.left);
 		}
 	}
 	if (hit) {
 		info.wallCollision = true;
 		float playerRightX = worldTransform_.translation_.x + (kWidth / 2.0f);
-		info.moveVector.x = playerRightX > blockLeftX ? blockLeftX - playerRightX : 0.0f;
+		float newMoveX = blockLeftX - playerRightX;
+		info.moveVector.x = (std::min)(info.moveVector.x, newMoveX);
 	}
 }
 
@@ -443,24 +465,39 @@ void Player::LeftCollision(CollisionMapInfo& info) {
 		Vector3 checkPos = CornerPosition(worldTransform_.translation_, corners[i]);
 		checkPos.y += (corners[i] == kLeftTop) ? -kCollisionCheckMargin : kCollisionCheckMargin;
 		Vector3 checkPosNew = checkPos + info.moveVector;
-		MapChipField::IndexSet indexSet = mapChipField_->GetMapChipIndexSetByPosition(checkPosNew);
-		MapChipField::MapChipType mapChipType = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex);
-		MapChipField::MapChipType mapChipTypeNext = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex + 1, indexSet.yIndex);
-		if (isMapChipSolid(mapChipType) && !isMapChipSolid(mapChipTypeNext)) {
+
+		MapChipField::IndexSet indexSetNew = mapChipField_->GetMapChipIndexSetByPosition(checkPosNew);
+		MapChipField::MapChipType mapChipType = mapChipField_->GetMapChipTypeByIndex(indexSetNew.xIndex, indexSetNew.yIndex);
+		MapChipField::MapChipType mapChipTypeNeighbor = mapChipField_->GetMapChipTypeByIndex(indexSetNew.xIndex + 1, indexSetNew.yIndex);
+
+		if (isMapChipSolid(mapChipType) && !isMapChipSolid(mapChipTypeNeighbor)) {
 			hit = true;
-			MapChipField::Rect blockRect = mapChipField_->GetRectByIndex(indexSet.xIndex, indexSet.yIndex);
+			MapChipField::Rect blockRect = mapChipField_->GetRectByIndex(indexSetNew.xIndex, indexSetNew.yIndex);
 			blockRightX = (std::max)(blockRightX, blockRect.right);
 		}
 	}
 	if (hit) {
 		info.wallCollision = true;
 		float playerLeftX = worldTransform_.translation_.x - (kWidth / 2.0f);
-		info.moveVector.x = playerLeftX < blockRightX ? blockRightX - playerLeftX : 0.0f;
+		float newMoveX = blockRightX - playerLeftX;
+		info.moveVector.x = (std::max)(info.moveVector.x, newMoveX);
 	}
 }
 
 void Player::OnWallCollision(const CollisionMapInfo& info) {
 	if (info.wallCollision) {
 		velocity_.x *= (1.0f - kAttenuationWall);
+	}
+}
+
+void Player::AddKey() {
+	if (keyCount_ < kMaxKeyCount) {
+		keyCount_++;
+	}
+}
+
+void Player::UseKey() {
+	if (keyCount_ > 0) {
+		keyCount_--;
 	}
 }

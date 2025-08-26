@@ -10,13 +10,16 @@ class MapChipField {
 public:
 	enum MapChipType {
 		kBlank,            // 0
-		kBlock,            // 1 (通常ブロック)
-		kBlock_Red,        // 2 (赤ブロック)
-		kBlock_Green,      // 3 (緑ブロック)
-		kBlock_Blue,       // 4 (青ブロック)
+		kBlock,            // 1
+		kBlock_Red,        // 2
+		kBlock_Green,      // 3
+		kBlock_Blue,       // 4
 		kCurtain_SetRed,   // 5
 		kCurtain_SetGreen, // 6
 		kCurtain_SetBlue,  // 7
+		kKey,              // 8
+		kLockedDoor,	   // 9
+		kGoal              // 10
 	};
 
 	struct MapChipData {

@@ -10,106 +10,69 @@
 #include "Skydome.h"
 #include <vector>
 
-// ブロックのデータをまとめる構造体
 struct BlockData {
 	WorldTransform* worldTransform = nullptr;
 	ObjectColor* objectColor = nullptr;
-	MapChipField::MapChipType type = MapChipField::MapChipType::kBlank; // ★ブロックの種類を保存
+	MapChipField::MapChipType type = MapChipField::MapChipType::kBlank;
 };
 
 class GameScene {
 public:
 	~GameScene();
-
-	// 初期化
-	void Initialize();
-
-	// 更新
+	void Initialize(int stageNumber);
 	void Update();
-
-	// 描画
 	void Draw();
-
 	void GenerateBlocks();
-
 	void CheckAllCollisions();
-
 	bool IsFinished() const { return finished_; }
-
+	bool IsCleared() const { return isCleared_; }
 	void CreateHitEffect(const Vector3& position, const Vector3& rotation);
 
 private:
-	// テクスチャハンドル
+	void OpenConnectedDoors(uint32_t startX, uint32_t startY);
+	void UpdateFadeInPhase();
+	void UpdatePlayPhase();
+	void UpdateDeathPhase();
+	void ChangePhase();
+
 	uint32_t textureHandle_ = 0;
-
-	// 3Dモデルデータ
-	KamataEngine::Model* model_ = nullptr;
-
-	// カメラ
+	Model* model_ = nullptr;
 	Camera camera_;
-
-	// 自キャラ
 	Player* player_ = nullptr;
-
-	// 天球
 	Skydome* skydome_ = nullptr;
-
-	// デスパーティクル
 	DeathParticles* deathParticles_ = nullptr;
-
-	// 敵キャラ
 	std::list<Enemy*> enemies_;
 	int32_t kEnemyCount_ = 1;
-
-	// カメラコントローラー
 	CameraController* cameraController_ = nullptr;
 
-	// 3Dモデルデータ
 	Model* blockModel_ = nullptr;
 	Model* playerModel_ = nullptr;
 	Model* skydomeModel_ = nullptr;
 	Model* enemyModel_ = nullptr;
 	Model* deathParticleModel_ = nullptr;
-	Model* attackFxModelRight_ = nullptr; // 右向き用
+	Model* attackFxModelRight_ = nullptr;
 	Model* attackFxModelLeft_ = nullptr;
 	Model* hitEffectModel_ = nullptr;
+	Model* lockedDoorModel_ = nullptr;
+	Model* keyModel_ = nullptr;
+	Model* goalModel_ = nullptr;
 
-	// ブロックのデータ
 	std::vector<std::vector<BlockData>> blocks_;
-
 	uint32_t textureHandleAttackFX_ = 0;
-	// デバックカメラ無効
 	bool isDebugCameraActive_ = false;
-
-	// デバッグカメラ
-	KamataEngine::DebugCamera* debugCamera_ = nullptr;
-
-	// マップチップフィールド
+	DebugCamera* debugCamera_ = nullptr;
 	MapChipField* mapChipField_;
-
-	// フェード
 	Fade* fade_ = nullptr;
 
-	enum class Phase {
-		kFadeIn,  // フェードイン
-		kPlay,    // ゲームプレイ
-		kDeath,   // デス演出
-		kFadeOut, // フェードアウト
-	};
-	// 現在のフェーズ
+	// --- ★UI用の変数を元のスプライト配列に戻します ---
+	static const int kMaxKeyIcons = 3;
+	Sprite* keyIcons_[kMaxKeyIcons] = {};      // 所持している鍵
+	Sprite* keyIconsEmpty_[kMaxKeyIcons] = {}; // 空の鍵枠
+
+	enum class Phase { kFadeIn, kPlay, kDeath, kFadeOut };
 	Phase phase_;
-
-	// 終了フラグ
 	bool finished_ = false;
-
+	bool isCleared_ = false;
 	bool isInitialized_ = false;
-
 	std::list<HitEffect*> hitEffects_;
-
-	// フェーズごとの更新処理
-	void UpdateFadeInPhase();
-	void UpdatePlayPhase();
-	void UpdateDeathPhase();
-	// フェーズの切り替え処理
-	void ChangePhase();
 };

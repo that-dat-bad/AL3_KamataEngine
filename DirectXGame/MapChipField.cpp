@@ -8,16 +8,18 @@
 namespace {
 
 std::map<std::string, MapChipField::MapChipType> mapchipTable = {
-    {"0", MapChipField::MapChipType::kBlank           },
-    {"1", MapChipField::MapChipType::kBlock           },
-    {"2", MapChipField::MapChipType::kBlock_Red       },
-    {"3", MapChipField::MapChipType::kBlock_Green     },
-    {"4", MapChipField::MapChipType::kBlock_Blue      },
-    {"5", MapChipField::MapChipType::kCurtain_SetRed  },
-    {"6", MapChipField::MapChipType::kCurtain_SetGreen},
-    {"7", MapChipField::MapChipType::kCurtain_SetBlue }
+    {"0",  MapChipField::MapChipType::kBlank           },
+    {"1",  MapChipField::MapChipType::kBlock           },
+    {"2",  MapChipField::MapChipType::kBlock_Red       },
+    {"3",  MapChipField::MapChipType::kBlock_Green     },
+    {"4",  MapChipField::MapChipType::kBlock_Blue      },
+    {"5",  MapChipField::MapChipType::kCurtain_SetRed  },
+    {"6",  MapChipField::MapChipType::kCurtain_SetGreen},
+    {"7",  MapChipField::MapChipType::kCurtain_SetBlue },
+    {"8",  MapChipField::MapChipType::kKey             },
+    {"9",  MapChipField::MapChipType::kLockedDoor      },
+    {"10", MapChipField::MapChipType::kGoal            }
 };
-
 }
 
 void MapChipField::ResetMapChipData() {

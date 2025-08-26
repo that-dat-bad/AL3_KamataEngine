@@ -4,22 +4,13 @@
 #include "mathStruct.h"
 #include <stdint.h>
 
-using namespace KamataEngine;
-
 class MapChipField;
 class Enemy;
 
 class Player {
 public:
-	// --- 色の状態 ---
-	enum class PlayerColor {
-		kNormal, // 通常色
-		kRed,    // 赤
-		kGreen,  // 緑
-		kBlue,   // 青
-	};
+	enum class PlayerColor { kNormal, kRed, kGreen, kBlue };
 
-	// --- 基本関数 ---
 	void Initialize(Model* model, Model* modelAttackRight, Model* modelAttackLeft, uint32_t textureHandle, Camera* camera, const Vector3& position);
 	void Update();
 	void Draw();
@@ -32,23 +23,22 @@ public:
 	bool IsDead() const { return isDead_; }
 	bool IsAttack() const { return behavior_ == Behavior::kAttack; }
 	PlayerColor GetCurrentColor() const { return currentColor_; }
+	int GetKeyCount() const { return keyCount_; } // ★鍵の数を取得
 
 	// --- セッター ---
 	void SetMapChipField(MapChipField* mapChipField) { mapChipField_ = mapChipField; }
 
-	// --- 衝突処理 ---
+	// --- 鍵の操作 ---
+	void AddKey(); // ★鍵を1つ増やす
+	void UseKey(); // ★鍵を1つ消費する
+
 	void OnCollision(const Enemy* enemy);
 
 private:
-	// --- 振る舞い（ビヘイビア） ---
-	enum class Behavior {
-		kRoot,
-		kAttack,
-		kUnknown,
-	};
+	// ...(Behavior, AttackPhase, etc)...
+	enum class Behavior { kRoot, kAttack, kUnknown };
 	Behavior behavior_ = Behavior::kRoot;
 	Behavior behaviorRequest_ = Behavior::kUnknown;
-
 	enum class AttackPhase {
 		kAnticipation,
 		kDash,
@@ -63,7 +53,6 @@ private:
 
 	uint32_t attackParameter_ = 0;
 
-	// --- マップとの衝突判定用の内部関数・構造体 ---
 	struct CollisionMapInfo {
 		bool ceilingCollision = false;
 		bool groundCollision = false;
@@ -74,7 +63,6 @@ private:
 
 	bool isMapChipSolid(MapChipField::MapChipType type);
 	void ResolveStuckState();
-
 	void MapCollider(CollisionMapInfo& info);
 	void CeilingCollision(CollisionMapInfo& info);
 	Vector3 CornerPosition(const Vector3& center, Corner corner);
@@ -86,7 +74,6 @@ private:
 	void LeftCollision(CollisionMapInfo& info);
 	void OnWallCollision(const CollisionMapInfo& info);
 
-	// --- 物理挙動・状態に関する変数 ---
 	WorldTransform worldTransform_;
 	WorldTransform worldTransformAttack_;
 	Model* model_ = nullptr;
@@ -105,8 +92,10 @@ private:
 
 	PlayerColor currentColor_ = PlayerColor::kNormal;
 	ObjectColor objectColor_;
+	int keyCount_ = 0;                 // ★boolからintに変更 (鍵の所持数)
+	static const int kMaxKeyCount = 3; // ★鍵の最大所持数
 
-	// --- 定数 ---
+	// ...(定数)...
 	static inline const float kAcceleration = 0.03f;
 	static inline const float kAttenuation = 0.02f;
 	static inline const float kLimitRunSpeed = 0.5f;
