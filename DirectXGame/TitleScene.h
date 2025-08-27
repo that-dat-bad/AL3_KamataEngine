@@ -6,33 +6,26 @@ using namespace KamataEngine;
 
 class TitleScene {
 public:
-	// デストラクタ
 	~TitleScene();
-
-	// 初期化
 	void Initialize();
-	// 更新
 	void Update();
-	// 描画
 	void Draw();
-
-	// 終了したかを取得
 	bool IsFinished() const { return finished_; }
+	int GetSelectedStage() const { return selectedStage_; }
 
 private:
 	enum class Phase {
-		kFadeIn,  // フェードイン
-		kMain,    // メイン処理
-		kFadeOut, // フェードアウト
-
+		kFadeIn,
+		kMain,
+		kFadeOut,
 	};
-	// 現在のフェーズ
 	Phase phase_;
-	// フェード
 	Fade* fade_ = nullptr;
+	Sprite* titleImage_ = nullptr;
+	Sprite* backgroundSprite_ = nullptr;
 
 	static inline const float kFadeDuration = 1.0f;
 
-	// 終了フラグ
 	bool finished_ = false;
+	int selectedStage_ = 0; // 0:未選択, 1:ステージ1へ, -1:ステージセレクトへ
 };

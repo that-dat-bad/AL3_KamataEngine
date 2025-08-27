@@ -36,7 +36,7 @@ private:
 	// 追跡対象とカメラの座標の差(オフセット)
 	Vector3 targetOffset_ = {0, 0, -50.0f};
 
-	Rect movableArea_ = {0.0f, 100, 0.0f, 100}; // 移動可能領域の矩形
+	Rect movableArea_ = {20, 270, 0.0f, 200}; // 移動可能領域の矩形
 
 	//カメラの目標座標
 	Vector3 targetPosition_;

@@ -18,22 +18,37 @@ struct BlockData {
 
 class GameScene {
 public:
+	enum class ClearResult {
+		kNextStage,
+		kStageSelect,
+		kTitle,
+		kNone,
+	};
+
 	~GameScene();
 	void Initialize(int stageNumber);
 	void Update();
 	void Draw();
-	void GenerateBlocks();
-	void CheckAllCollisions();
+
 	bool IsFinished() const { return finished_; }
 	bool IsCleared() const { return isCleared_; }
+	ClearResult GetClearResult() const { return clearResult_; }
+
 	void CreateHitEffect(const Vector3& position, const Vector3& rotation);
+	void GenerateBlocks();
+	void CheckAllCollisions();
 
 private:
 	void OpenConnectedDoors(uint32_t startX, uint32_t startY);
+
 	void UpdateFadeInPhase();
 	void UpdatePlayPhase();
 	void UpdateDeathPhase();
+	void UpdateStageClearPhase();
 	void ChangePhase();
+
+	void InitializeStageClearUI();
+	void DrawStageClearUI();
 
 	uint32_t textureHandle_ = 0;
 	Model* model_ = nullptr;
@@ -56,6 +71,10 @@ private:
 	Model* lockedDoorModel_ = nullptr;
 	Model* keyModel_ = nullptr;
 	Model* goalModel_ = nullptr;
+	Model* goalArrowModel_ = nullptr;
+	WorldTransform goalArrowWorldTransform_; 
+	float goalArrowAnimationTimer_ = 0.0f;
+	Vector3 goalPosition_;
 
 	std::vector<std::vector<BlockData>> blocks_;
 	uint32_t textureHandleAttackFX_ = 0;
@@ -64,15 +83,33 @@ private:
 	MapChipField* mapChipField_;
 	Fade* fade_ = nullptr;
 
-	// --- ★UI用の変数を元のスプライト配列に戻します ---
 	static const int kMaxKeyIcons = 3;
-	Sprite* keyIcons_[kMaxKeyIcons] = {};      // 所持している鍵
-	Sprite* keyIconsEmpty_[kMaxKeyIcons] = {}; // 空の鍵枠
+	Sprite* keyIcons_[kMaxKeyIcons] = {};
+	Sprite* keyIconsEmpty_[kMaxKeyIcons] = {};
 
-	enum class Phase { kFadeIn, kPlay, kDeath, kFadeOut };
+	enum class Phase { kFadeIn, kPlay, kDeath, kStageClear, kFadeOut };
 	Phase phase_;
 	bool finished_ = false;
 	bool isCleared_ = false;
 	bool isInitialized_ = false;
 	std::list<HitEffect*> hitEffects_;
+
+
+	ClearResult clearResult_ = ClearResult::kNone;
+	Sprite* overlaySprite_ = nullptr;
+	Sprite* buttonNextStage_ = nullptr;
+	Sprite* buttonStageSelect_ = nullptr;
+	Sprite* buttonBackToTitle_ = nullptr;
+	Sprite* cursor_ = nullptr;
+	int clearMenuSelection_ = 0;
+
+	enum class ClearMenuPhase {
+		kOverlayFadeIn, // 背景がフェードイン中
+		kDelay,         // ボタン表示までの待機時間
+		kActive         // 操作可能
+	};
+	ClearMenuPhase clearMenuPhase_;
+	float clearMenuTimer_ = 0.0f;
+	float overlayAlpha_ = 0.0f;
+	float cursorAnimationTimer_ = 0.0f;
 };

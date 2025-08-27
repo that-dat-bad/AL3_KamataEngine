@@ -1,10 +1,12 @@
 #pragma once
+#include "Fade.h"
 #include "KamataEngine.h"
 
 using namespace KamataEngine;
 
 class StageSelectScene {
 public:
+	~StageSelectScene();
 	void Initialize();
 	void Update();
 	void Draw();
@@ -13,15 +15,18 @@ public:
 	int GetSelectedStage() const { return selectedStage_; }
 
 private:
-	// ステージの総数
-	static const int kMaxStages = 3;
-
-	// 選択中のステージ番号 (1-indexed)
+	static const int kMaxStages = 5;
 	int selectedStage_ = 1;
-
-	// 終了フラグ
 	bool isFinished_ = false;
 
-	// 画像表示用のスプライト
 	Sprite* sprites_[kMaxStages] = {};
+	Sprite* background_ = nullptr;
+
+	Fade* fade_ = nullptr;
+	enum class Phase { kFadeIn, kMain, kFadeOut };
+	Phase phase_ = Phase::kFadeIn;
+
+	float animationTimer_ = 0.0f;
+
+	Vector2 originalSpriteSizes_[kMaxStages];
 };

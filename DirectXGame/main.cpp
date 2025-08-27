@@ -1,3 +1,4 @@
+#include "ClearScene.h"
 #include "GameScene.h"
 #include "KamataEngine.h"
 #include "StageSelectScene.h"
@@ -10,8 +11,9 @@ using namespace KamataEngine;
 enum class Scene {
 	kUnknown,
 	kTitle,
-	kStageSelect, // ★ステージセレクトシーンを追加
+	kStageSelect,
 	kGame,
+	kClear,
 };
 
 // 現在のシーン
@@ -25,6 +27,7 @@ static int g_currentStage = 1;
 TitleScene* titleScene = nullptr;
 StageSelectScene* stageSelectScene = nullptr;
 GameScene* gameScene = nullptr;
+ClearScene* clearScene = nullptr;
 
 // --- シーン制御用の関数プロトタイプ宣言 ---
 void ChangeScene();
@@ -58,6 +61,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	delete titleScene;
 	delete stageSelectScene;
 	delete gameScene;
+	delete clearScene;
 	KamataEngine::Finalize();
 	return 0;
 }
@@ -73,6 +77,9 @@ void UpdateScene() {
 	case Scene::kGame:
 		gameScene->Update();
 		break;
+	case Scene::kClear:
+		clearScene->Update();
+		break;
 	}
 }
 
@@ -86,6 +93,9 @@ void DrawScene() {
 		break;
 	case Scene::kGame:
 		gameScene->Draw();
+		break;
+	case Scene::kClear:
+		clearScene->Draw();
 		break;
 	}
 }
@@ -105,7 +115,7 @@ void ChangeScene() {
 	case Scene::kStageSelect:
 		if (stageSelectScene->IsFinished()) {
 			scene = Scene::kGame;
-			g_currentStage = stageSelectScene->GetSelectedStage(); // 選択したステージ番号を取得
+			g_currentStage = stageSelectScene->GetSelectedStage();
 			delete stageSelectScene;
 			stageSelectScene = nullptr;
 			gameScene = new GameScene();
@@ -115,22 +125,40 @@ void ChangeScene() {
 
 	case Scene::kGame:
 		if (gameScene->IsFinished()) {
-			// クリアしたかどうかで分岐
 			if (gameScene->IsCleared()) {
-				g_currentStage++; // 次のステージへ
-				if (g_currentStage > kMaxStages) {
-					// 最終ステージクリアならタイトルへ
+				GameScene::ClearResult result = gameScene->GetClearResult();
+				delete gameScene;
+				gameScene = nullptr;
+
+				switch (result) {
+				case GameScene::ClearResult::kNextStage:
+					g_currentStage++;
+					if (g_currentStage > kMaxStages) {
+						// 最終ステージクリアなら全体クリア画面へ
+						scene = Scene::kClear;
+						clearScene = new ClearScene();
+						clearScene->Initialize();
+					} else {
+						// 次のステージへ
+						scene = Scene::kGame;
+						gameScene = new GameScene();
+						gameScene->Initialize(g_currentStage);
+					}
+					break;
+
+				case GameScene::ClearResult::kStageSelect:
+					scene = Scene::kStageSelect;
+					stageSelectScene = new StageSelectScene();
+					stageSelectScene->Initialize();
+					break;
+
+				case GameScene::ClearResult::kTitle:
 					scene = Scene::kTitle;
-					delete gameScene;
-					gameScene = nullptr;
 					titleScene = new TitleScene();
 					titleScene->Initialize();
-				} else {
-					// 次のステージへ
-					delete gameScene;
-					gameScene = new GameScene();
-					gameScene->Initialize(g_currentStage);
+					break;
 				}
+
 			} else {
 				// 死亡した場合はステージセレクトに戻る
 				scene = Scene::kStageSelect;
@@ -139,6 +167,16 @@ void ChangeScene() {
 				stageSelectScene = new StageSelectScene();
 				stageSelectScene->Initialize();
 			}
+		}
+		break;
+
+	case Scene::kClear:
+		if (clearScene->IsFinished()) {
+			scene = Scene::kTitle;
+			delete clearScene;
+			clearScene = nullptr;
+			titleScene = new TitleScene();
+			titleScene->Initialize();
 		}
 		break;
 	}

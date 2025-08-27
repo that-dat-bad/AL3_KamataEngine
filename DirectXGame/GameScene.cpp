@@ -4,6 +4,7 @@
 #include <queue>
 #include <random>
 #include <string>
+#include <vector>
 using namespace KamataEngine;
 
 GameScene::~GameScene() {
@@ -44,6 +45,13 @@ GameScene::~GameScene() {
 		delete effect;
 	}
 	hitEffects_.clear();
+
+	delete overlaySprite_;
+	delete buttonNextStage_;
+	delete buttonStageSelect_;
+	delete buttonBackToTitle_;
+	delete cursor_;
+	delete goalArrowModel_;
 }
 
 void GameScene::Initialize(int stageNumber) {
@@ -60,14 +68,14 @@ void GameScene::Initialize(int stageNumber) {
 	hitEffectModel_ = Model::CreateFromOBJ("hitFX", true);
 	lockedDoorModel_ = Model::CreateFromOBJ("lock", true);
 	keyModel_ = Model::CreateFromOBJ("key", true);
-	goalModel_ = Model::CreateFromOBJ("key", true);
+	goalModel_ = Model::CreateFromOBJ("goal", true);
+	goalArrowModel_ = Model::CreateFromOBJ("goal_help", true);
+	goalArrowWorldTransform_.Initialize();
 
-	// --- UIの初期化 ---
 	uint32_t keyIconTexture = TextureManager::Load("png/key_icon.png");
 	uint32_t keyIconEmptyTexture = TextureManager::Load("png/key_icon_empty.png");
 	for (int i = 0; i < kMaxKeyIcons; ++i) {
-		// 表示座標を横にずらしながら3つ生成
-		float posX = 20.0f + (i * 74.0f); // アイコンの幅に合わせて調整
+		float posX = 20.0f + (i * 74.0f);
 		keyIcons_[i] = Sprite::Create(keyIconTexture, {posX, 20.0f});
 		keyIconsEmpty_[i] = Sprite::Create(keyIconEmptyTexture, {posX, 20.0f});
 	}
@@ -81,7 +89,7 @@ void GameScene::Initialize(int stageNumber) {
 	GenerateBlocks();
 
 	player_ = new Player();
-	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(1, 18);
+	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(1, 15);
 	player_->Initialize(playerModel_, attackFxModelRight_, attackFxModelLeft_, textureHandleAttackFX_, &camera_, playerPosition);
 	player_->SetMapChipField(mapChipField_);
 
@@ -121,6 +129,9 @@ void GameScene::Update() {
 	case Phase::kDeath:
 		UpdateDeathPhase();
 		break;
+	case Phase::kStageClear:
+		UpdateStageClearPhase();
+		break;
 	case Phase::kFadeOut:
 		fade_->Update();
 		if (fade_->IsFinished()) {
@@ -130,6 +141,7 @@ void GameScene::Update() {
 	}
 
 	ChangePhase();
+
 #ifdef _DEBUG
 	if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
 		isDebugCameraActive_ = !isDebugCameraActive_;
@@ -142,11 +154,14 @@ void GameScene::Update() {
 		camera_.matProjection = debugCamera_->GetCamera().matProjection;
 		camera_.TransferMatrix();
 	} else {
-		cameraController_->Update();
+		if (phase_ == Phase::kPlay || phase_ == Phase::kFadeIn) {
+			cameraController_->Update();
+		}
 		camera_.UpdateMatrix();
 		camera_.TransferMatrix();
 	}
 }
+
 
 void GameScene::Draw() {
 	if (!isInitialized_) {
@@ -194,6 +209,9 @@ void GameScene::Draw() {
 			}
 		}
 	}
+	if (goalArrowModel_) {
+		goalArrowModel_->Draw(goalArrowWorldTransform_, camera_);
+	}
 	Model::PostDraw();
 
 	for (Enemy* enemy : enemies_) {
@@ -205,6 +223,7 @@ void GameScene::Draw() {
 	if (phase_ != Phase::kDeath) {
 		player_->Draw();
 	}
+
 	switch (phase_) {
 	case Phase::kDeath:
 		if (deathParticles_) {
@@ -213,7 +232,6 @@ void GameScene::Draw() {
 		break;
 	}
 
-	// --- UIの描画 ---
 	Sprite::PreDraw(DirectXCommon::GetInstance()->GetCommandList());
 	int keyCount = player_->GetKeyCount();
 	for (int i = 0; i < kMaxKeyIcons; ++i) {
@@ -224,6 +242,11 @@ void GameScene::Draw() {
 		}
 	}
 	Sprite::PostDraw();
+
+
+	if (phase_ == Phase::kStageClear || (phase_ == Phase::kFadeOut && isCleared_)) {
+		DrawStageClearUI();
+	}
 
 	if (phase_ == Phase::kFadeIn || phase_ == Phase::kFadeOut) {
 		fade_->Draw();
@@ -250,7 +273,10 @@ void GameScene::GenerateBlocks() {
 				newWorldTransform->Initialize();
 				newWorldTransform->translation_.x = kBlockWidth * j;
 				newWorldTransform->translation_.y = kBlockHeight * (numBlockVirtical - 1 - i);
-
+				if (mapChipType == MapChipField::MapChipType::kGoal) {
+					newWorldTransform->translation_.y -= kBlockHeight * 0.5f;
+					goalPosition_ = newWorldTransform->translation_;
+				}
 				ObjectColor* newObjectColor = new ObjectColor();
 				newObjectColor->Initialize();
 
@@ -265,13 +291,13 @@ void GameScene::GenerateBlocks() {
 					newObjectColor->SetColor({0.2f, 0.2f, 1.0f, 1.0f});
 					break;
 				case MapChipField::MapChipType::kCurtain_SetRed:
-					newObjectColor->SetColor({1.0f, 0.2f, 0.2f, 0.5f});
+					newObjectColor->SetColor({1.0f, 0.2f, 0.2f, 0.1f});
 					break;
 				case MapChipField::MapChipType::kCurtain_SetGreen:
-					newObjectColor->SetColor({0.2f, 1.0f, 0.2f, 0.5f});
+					newObjectColor->SetColor({0.2f, 1.0f, 0.2f, 0.1f});
 					break;
 				case MapChipField::MapChipType::kCurtain_SetBlue:
-					newObjectColor->SetColor({0.2f, 0.2f, 1.0f, 0.5f});
+					newObjectColor->SetColor({0.2f, 0.2f, 1.0f, 0.1f});
 					break;
 				case MapChipField::MapChipType::kBlock:
 				case MapChipField::MapChipType::kKey:
@@ -371,6 +397,11 @@ void GameScene::UpdateFadeInPhase() {
 void GameScene::UpdatePlayPhase() {
 	skydome_->Update();
 	player_->Update();
+	goalArrowAnimationTimer_ += 1.0f / 60.0f * 5.0f; // 速度調整
+	goalArrowWorldTransform_.translation_ = goalPosition_;
+	goalArrowWorldTransform_.translation_.y += 1.0f + (std::sin(goalArrowAnimationTimer_) * 0.5f); // 基準y + 上下動
+	goalArrowWorldTransform_.matWorld_ = MakeAffineMatrix(goalArrowWorldTransform_.scale_, goalArrowWorldTransform_.rotation_, goalArrowWorldTransform_.translation_);
+	goalArrowWorldTransform_.TransferMatrix();
 	for (Enemy* enemy : enemies_) {
 		enemy->Update();
 	}
@@ -392,7 +423,6 @@ void GameScene::UpdatePlayPhase() {
 		}
 		return false;
 	});
-	cameraController_->Update();
 
 	AABB playerAABB = player_->GetAABB();
 	MapChipField::IndexSet indexMin = mapChipField_->GetMapChipIndexSetByPosition(playerAABB.min);
@@ -425,7 +455,9 @@ void GameScene::UpdatePlayPhase() {
 			}
 			if (chipType == MapChipField::MapChipType::kGoal) {
 				isCleared_ = true;
-				finished_ = true;
+				phase_ = Phase::kStageClear;
+				InitializeStageClearUI();
+				return;
 			}
 		}
 		if (keyUsedThisFrame) {
@@ -481,4 +513,128 @@ void GameScene::ChangePhase() {
 		break;
 	}
 }
+
+#pragma endregion
+
+#pragma region クリア後
+
+void GameScene::InitializeStageClearUI() {
+	uint32_t texNext = TextureManager::Load("png/button_next_stage.png");
+	uint32_t texSelect = TextureManager::Load("png/button_stage_select.png");
+	uint32_t texTitle = TextureManager::Load("png/button_back_to_title.png");
+	uint32_t texCursor = TextureManager::Load("png/cursor.png");
+	uint32_t stageClearOverlayTexHandle = TextureManager::Load("png/stage_clear.png");
+
+	// オーバーレイの初期化
+	overlaySprite_ = Sprite::Create(stageClearOverlayTexHandle, {0.0f, 0.0f});
+	overlaySprite_->SetSize({1280.0f, 720.0f});
+	overlaySprite_->SetColor({1.0f, 1.0f, 1.0f, 0.0f}); // 最初は透明
+	overlayAlpha_ = 0.0f;
+
+	// ボタンとカーソルのスプライトを生成
+	const Vector2 buttonSize = {320.0f, 120.0f};
+	float centerX = (1280.0f - buttonSize.x) / 2.0f;
+	buttonNextStage_ = Sprite::Create(texNext, {centerX, 240.0f});
+	buttonStageSelect_ = Sprite::Create(texSelect, {centerX, 380.0f});
+	buttonBackToTitle_ = Sprite::Create(texTitle, {centerX, 520.0f});
+	buttonNextStage_->SetSize(buttonSize);
+	buttonStageSelect_->SetSize(buttonSize);
+	buttonBackToTitle_->SetSize(buttonSize);
+	cursor_ = Sprite::Create(texCursor, {0, 0});
+
+	// 内部状態を初期化
+	clearMenuPhase_ = ClearMenuPhase::kOverlayFadeIn;
+	clearMenuTimer_ = 0.0f;
+	clearMenuSelection_ = 0;
+
+	float cursorX = ((1280.0f - buttonSize.x) / 2.0f) - 80.0f;
+	std::vector<float> buttonYPositions = {
+	    240.0f + (buttonSize.y / 2.0f) - (cursor_->GetSize().y / 2.0f), 380.0f + (buttonSize.y / 2.0f) - (cursor_->GetSize().y / 2.0f), 520.0f + (buttonSize.y / 2.0f) - (cursor_->GetSize().y / 2.0f)};
+	// 初期選択肢(0番目)に合わせてカーソル位置を設定
+	cursor_->SetPosition({cursorX, buttonYPositions[clearMenuSelection_]});
+}
+
+void GameScene::UpdateStageClearPhase() {
+	// 内部フェーズに応じて処理を分岐
+	switch (clearMenuPhase_) {
+	case ClearMenuPhase::kOverlayFadeIn:
+
+		overlayAlpha_ += (1.0f / 60.0f) / 1.5f;
+		if (overlayAlpha_ >= 0.7f) {
+			overlayAlpha_ = 0.7f;
+			clearMenuPhase_ = ClearMenuPhase::kDelay; // 次のフェーズへ
+		}
+		overlaySprite_->SetColor({1.0f, 1.0f, 1.0f, overlayAlpha_});
+		break;
+
+	case ClearMenuPhase::kDelay:
+		clearMenuTimer_ += 1.0f / 60.0f;
+		if (clearMenuTimer_ >= 0.3f) {
+			clearMenuPhase_ = ClearMenuPhase::kActive; // 次のフェーズ（操作可能）へ
+		}
+		break;
+
+	case ClearMenuPhase::kActive:
+		cursorAnimationTimer_ += 1.0f / 60.0f * 8.0f;
+		const int selectionMin = 0;
+		const int selectionMax = 2;
+
+		if (Input::GetInstance()->TriggerKey(DIK_UP)) {
+			clearMenuSelection_--;
+			if (clearMenuSelection_ < selectionMin) {
+				clearMenuSelection_ = selectionMax;
+			}
+		}
+		if (Input::GetInstance()->TriggerKey(DIK_DOWN)) {
+			clearMenuSelection_++;
+			if (clearMenuSelection_ > selectionMax) {
+				clearMenuSelection_ = selectionMin;
+			}
+		}
+
+		if (Input::GetInstance()->TriggerKey(DIK_SPACE) || Input::GetInstance()->TriggerKey(DIK_RETURN)) {
+			switch (clearMenuSelection_) {
+			case 0:
+				clearResult_ = ClearResult::kNextStage;
+				break;
+			case 1:
+				clearResult_ = ClearResult::kStageSelect;
+				break;
+			case 2:
+				clearResult_ = ClearResult::kTitle;
+				break;
+			}
+			phase_ = Phase::kFadeOut;
+			fade_->Start(Fade::Status::FadeOut, 1.0f);
+		}
+
+		// カーソル位置の更新
+		const Vector2 buttonSize = {320.0f, 120.0f};
+		float cursorX = ((1280.0f - buttonSize.x) / 2.0f) - 80.0f;
+		cursorX += std::sin(cursorAnimationTimer_) * 10.0f;
+		std::vector<float> buttonYPositions = {
+		    240.0f + (buttonSize.y / 2.0f) - (cursor_->GetSize().y / 2.0f), 380.0f + (buttonSize.y / 2.0f) - (cursor_->GetSize().y / 2.0f),
+		    520.0f + (buttonSize.y / 2.0f) - (cursor_->GetSize().y / 2.0f)};
+		cursor_->SetPosition({cursorX, buttonYPositions[clearMenuSelection_]});
+		break;
+	}
+}
+
+void GameScene::DrawStageClearUI() {
+	Sprite::PreDraw(DirectXCommon::GetInstance()->GetCommandList());
+
+	// 背景のオーバーレイは常に描画
+	overlaySprite_->Draw();
+
+	// 操作可能フェーズになったらボタンとカーソルを描画
+	if (clearMenuPhase_ == ClearMenuPhase::kActive) {
+		buttonNextStage_->Draw();
+		buttonStageSelect_->Draw();
+		buttonBackToTitle_->Draw();
+		cursor_->Draw();
+	}
+
+	Sprite::PostDraw();
+}
+
 #pragma endregion
