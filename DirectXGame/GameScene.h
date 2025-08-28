@@ -86,7 +86,7 @@ private:
 	static const int kMaxKeyIcons = 3;
 	Sprite* keyIcons_[kMaxKeyIcons] = {};
 	Sprite* keyIconsEmpty_[kMaxKeyIcons] = {};
-
+	Sprite* helpSprite_ = nullptr;
 	enum class Phase { kFadeIn, kPlay, kDeath, kStageClear, kFadeOut };
 	Phase phase_;
 	bool finished_ = false;
@@ -112,4 +112,5 @@ private:
 	float clearMenuTimer_ = 0.0f;
 	float overlayAlpha_ = 0.0f;
 	float cursorAnimationTimer_ = 0.0f;
+
 };

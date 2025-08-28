@@ -11,7 +11,7 @@ class Player {
 public:
 	enum class PlayerColor { kNormal, kRed, kGreen, kBlue };
 
-	void Initialize(Model* model, Model* modelAttackRight, Model* modelAttackLeft, uint32_t textureHandle, Camera* camera, const Vector3& position);
+	void Initialize(Model* model, Camera* camera, const Vector3& position);
 	void Update();
 	void Draw();
 
@@ -23,19 +23,18 @@ public:
 	bool IsDead() const { return isDead_; }
 	bool IsAttack() const { return behavior_ == Behavior::kAttack; }
 	PlayerColor GetCurrentColor() const { return currentColor_; }
-	int GetKeyCount() const { return keyCount_; } // ★鍵の数を取得
+	int GetKeyCount() const { return keyCount_; }
 
 	// --- セッター ---
 	void SetMapChipField(MapChipField* mapChipField) { mapChipField_ = mapChipField; }
 
 	// --- 鍵の操作 ---
-	void AddKey(); // ★鍵を1つ増やす
-	void UseKey(); // ★鍵を1つ消費する
+	void AddKey();
+	void UseKey();
 
 	void OnCollision(const Enemy* enemy);
 
 private:
-	// ...(Behavior, AttackPhase, etc)...
 	enum class Behavior { kRoot, kAttack, kUnknown };
 	Behavior behavior_ = Behavior::kRoot;
 	Behavior behaviorRequest_ = Behavior::kUnknown;
@@ -73,6 +72,10 @@ private:
 	void RightCollision(CollisionMapInfo& info);
 	void LeftCollision(CollisionMapInfo& info);
 	void OnWallCollision(const CollisionMapInfo& info);
+	bool CheckCeilingCollisionAtPosition(const Vector3& position, float& minCeilingY);
+	bool CheckGroundCollisionAtPosition(const Vector3& position, float& maxGroundY);
+	bool CheckWallCollisionAtPosition(const Vector3& position, bool checkingRightWall, float& wallX);
+	bool CheckGroundUnderPosition(const Vector3& position);
 
 	WorldTransform worldTransform_;
 	WorldTransform worldTransformAttack_;
@@ -92,17 +95,17 @@ private:
 
 	PlayerColor currentColor_ = PlayerColor::kNormal;
 	ObjectColor objectColor_;
-	int keyCount_ = 0;                 // ★boolからintに変更 (鍵の所持数)
-	static const int kMaxKeyCount = 3; // ★鍵の最大所持数
+	int keyCount_ = 0;
+	static const int kMaxKeyCount = 3;
 
 	// ...(定数)...
-	static inline const float kAcceleration = 0.03f;
+	static inline const float kAcceleration = 0.06f;
 	static inline const float kAttenuation = 0.02f;
-	static inline const float kLimitRunSpeed = 0.5f;
+	static inline const float kLimitRunSpeed = 0.8f;
 	static inline const float kTimeTurn = 0.3f;
-	static inline const float kGravityAcceleration = 0.01f;
-	static inline const float kLimitFallSpeed = 0.3f;
-	static inline const float kJumpAcceleration = 0.5f;
+	static inline const float kGravityAcceleration = 0.05f;
+	static inline const float kLimitFallSpeed = 0.5f;
+	static inline const float kJumpAcceleration = 0.8f;
 	static inline const float kAttenuationLanding = 0.05f;
 	static inline const float kAttenuationWall = 0.2f;
 	static inline const float kWidth = 1.8f;

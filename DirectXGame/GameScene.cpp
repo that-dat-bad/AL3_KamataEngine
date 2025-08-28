@@ -71,7 +71,11 @@ void GameScene::Initialize(int stageNumber) {
 	goalModel_ = Model::CreateFromOBJ("goal", true);
 	goalArrowModel_ = Model::CreateFromOBJ("goal_help", true);
 	goalArrowWorldTransform_.Initialize();
-
+	uint32_t helpTexture = TextureManager::Load("png/help.png");
+	helpSprite_ = Sprite::Create(helpTexture, {0, 0});
+	float x = 1280.0f - helpSprite_->GetSize().x - 20.0f; // 右端から20px内側
+	float y = 720.0f - helpSprite_->GetSize().y - 20.0f;  // 下端から20px内側
+	helpSprite_->SetPosition({x, y});
 	uint32_t keyIconTexture = TextureManager::Load("png/key_icon.png");
 	uint32_t keyIconEmptyTexture = TextureManager::Load("png/key_icon_empty.png");
 	for (int i = 0; i < kMaxKeyIcons; ++i) {
@@ -90,7 +94,7 @@ void GameScene::Initialize(int stageNumber) {
 
 	player_ = new Player();
 	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(1, 15);
-	player_->Initialize(playerModel_, attackFxModelRight_, attackFxModelLeft_, textureHandleAttackFX_, &camera_, playerPosition);
+	player_->Initialize(playerModel_, &camera_, playerPosition);
 	player_->SetMapChipField(mapChipField_);
 
 	kEnemyCount_ = 0;
@@ -116,6 +120,7 @@ void GameScene::Initialize(int stageNumber) {
 	fade_->Initialize();
 	phase_ = Phase::kFadeIn;
 	fade_->Start(Fade::Status::FadeIn, 1.0f);
+
 }
 
 void GameScene::Update() {
@@ -240,6 +245,9 @@ void GameScene::Draw() {
 		} else {
 			keyIconsEmpty_[i]->Draw();
 		}
+	}
+	if (helpSprite_) {
+		helpSprite_->Draw();
 	}
 	Sprite::PostDraw();
 
@@ -397,9 +405,9 @@ void GameScene::UpdateFadeInPhase() {
 void GameScene::UpdatePlayPhase() {
 	skydome_->Update();
 	player_->Update();
-	goalArrowAnimationTimer_ += 1.0f / 60.0f * 5.0f; // 速度調整
+	goalArrowAnimationTimer_ += 1.0f / 60.0f * 5.0f;
 	goalArrowWorldTransform_.translation_ = goalPosition_;
-	goalArrowWorldTransform_.translation_.y += 1.0f + (std::sin(goalArrowAnimationTimer_) * 0.5f); // 基準y + 上下動
+	goalArrowWorldTransform_.translation_.y += 1.0f + (std::sin(goalArrowAnimationTimer_) * 0.5f);
 	goalArrowWorldTransform_.matWorld_ = MakeAffineMatrix(goalArrowWorldTransform_.scale_, goalArrowWorldTransform_.rotation_, goalArrowWorldTransform_.translation_);
 	goalArrowWorldTransform_.TransferMatrix();
 	for (Enemy* enemy : enemies_) {

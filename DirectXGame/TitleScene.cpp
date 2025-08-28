@@ -26,6 +26,7 @@ void TitleScene::Initialize() {
 	// フェードインから開始
 	phase_ = Phase::kFadeIn;
 	fade_->Start(Fade::Status::FadeIn, kFadeDuration);
+
 }
 
 void TitleScene::Update() {

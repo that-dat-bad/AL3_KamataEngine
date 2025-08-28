@@ -15,7 +15,7 @@ public:
 	int GetSelectedStage() const { return selectedStage_; }
 
 private:
-	static const int kMaxStages = 5;
+	static const int kMaxStages = 2;
 	int selectedStage_ = 1;
 	bool isFinished_ = false;
 
@@ -27,6 +27,5 @@ private:
 	Phase phase_ = Phase::kFadeIn;
 
 	float animationTimer_ = 0.0f;
-
 	Vector2 originalSpriteSizes_[kMaxStages];
 };

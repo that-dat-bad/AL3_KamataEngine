@@ -19,7 +19,7 @@ enum class Scene {
 // 現在のシーン
 Scene scene = Scene::kUnknown;
 // ステージの総数
-const int kMaxStages = 3;
+const int kMaxStages = 2;
 // 現在のステージ番号を管理する変数
 static int g_currentStage = 1;
 
@@ -35,7 +35,7 @@ void UpdateScene();
 void DrawScene();
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
-	KamataEngine::Initialize(L"LE2B_14_タカナガ_ダイキ_AL3");
+	KamataEngine::Initialize(L"LE2B_14_タカナガ_ダイキ_ウツロイ");
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 
 	// --- 最初のシーンをタイトルに設定 ---
