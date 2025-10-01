@@ -1,5 +1,8 @@
 #pragma once
-#include "KamataEngine.h "
+#include "KamataEngine.h"
+#include <stdint.h>
+
+
 class Player {
 public:
 	void Initialize(KamataEngine::Model* model,uint32_t textureHandle);

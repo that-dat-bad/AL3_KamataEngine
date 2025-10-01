@@ -1,6 +1,7 @@
 #include "GameScene.h"
 #include "Player.h"
 #include<assert.h>
+using namespace KamataEngine;
 
 using namespace KamataEngine;
 

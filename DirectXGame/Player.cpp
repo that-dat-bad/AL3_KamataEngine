@@ -9,6 +9,7 @@ void Player::Initialize(KamataEngine::Model* model, uint32_t textureHandle) {
 	worldTransform_.Initialize();
 }
 
-void Player::Update() { worldTransform_.TransferMatrix(); }
+void Player::Update() { 
+	worldTransform_.TransferMatrix(); }
 
 void Player::Draw() {}
