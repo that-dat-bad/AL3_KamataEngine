@@ -16,8 +16,11 @@ void GameScene::Initialize() {
 	worldTransform_.Initialize();
 	camera_.Initialize();
 	player_ = new Player();
+	player_->Initialize(model_, textureHandle_, &camera_);
 }
 
-void GameScene::Update() { player_->Update(); }
+void GameScene::Update() { 
+	player_->Update(); 
+}
 
 void GameScene::Draw() { player_->Draw(); }

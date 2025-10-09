@@ -18,8 +18,14 @@ public:
 private:
 	uint32_t textureHandle_ = 0;
 
-	KamataEngine::Model* model_ = nullptr;
-	KamataEngine::WorldTransform worldTransform_;
-	KamataEngine::Camera camera_;
-	Player* player_ = nullptr;
+		//3Dモデルデータ
+	    KamataEngine::Model* model_ = nullptr;
+
+		//カメラ
+	    KamataEngine::Camera camera_;
+
+		//自キャラ
+	    Player* player_ = nullptr;
+
+		KamataEngine::WorldTransform worldTransform_;
 };
