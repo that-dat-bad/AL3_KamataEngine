@@ -4,7 +4,6 @@
 
 class GameScene {
 public:
-	GameScene() = default;
 	~GameScene();
 
 	// 初期化
