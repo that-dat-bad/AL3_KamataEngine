@@ -2,6 +2,7 @@
 #include "KamataEngine.h"
 #include "MapChipField.h"
 #include <stdint.h>
+#include<cassert>
 using namespace KamataEngine;
 
 class MapChipField;

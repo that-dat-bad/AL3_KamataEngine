@@ -16,15 +16,14 @@ void Player::Initialize(Model* model, Camera* camera, const Vector3& position) {
 	worldTransform_.rotation_.y = std::numbers::pi_v<float> / 2.0f;
 }
 
-
 void Player::Update() {
 	// --- 1. 入力と物理演算 ---
 	if (onGround_) {
 		// ▼ 接地状態の処理
 		velocity_.y = 0; // 地面にいるときはY速度を0に
 
-		// ジャンプ入力
-		if (Input::GetInstance()->PushKey(DIK_UP)) {
+		// ジャンプ入力 (キーをスペースに、押した瞬間だけ反応するように変更)
+		if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
 			velocity_.y = kJumpAcceleration;
 			onGround_ = false; // すぐに空中状態へ
 		}
@@ -55,8 +54,10 @@ void Player::Update() {
 			velocity_.x *= (1.0f - kAttenuation);
 		}
 	} else {
-		// ▼ 空中状態の処理 (重力)
-		velocity_.y -= kGravityAcceleration;
+		// ▼ 空中状態の処理
+		velocity_.y -= kGravityAcceleration; // 重力
+		// (修正) 空中では左右の加速をなくし、空気抵抗で少し減速させる
+		velocity_.x *= (1.0f - kAttenuation / 4.0f);
 	}
 	// 速度制限
 	velocity_.x = std::clamp(velocity_.x, -kLimitRunSpeed, kLimitRunSpeed);
@@ -75,7 +76,7 @@ void Player::Update() {
 	// --- 5. 衝突後の状態更新 ---
 	OnCeilingCollision(collisionMapInfo); // 天井に当たった時の処理
 	ToggleOnGround(collisionMapInfo);     // 接地状態を更新 (重要)
-	OnWallCollision(collisionMapInfo); 
+	OnWallCollision(collisionMapInfo);
 
 	// --- 6. 旋回制御と行列更新 ---
 	if (turnTimer_ > 0.0f) {
@@ -87,6 +88,15 @@ void Player::Update() {
 		float destinationRotationY = destinationRotationYTable[static_cast<uint32_t>(lrdirection_)];
 		float progress = 1.0f - (turnTimer_ / kTimeTurn);
 		worldTransform_.rotation_.y = turnFIrstRotationY_ + (destinationRotationY - turnFIrstRotationY_) * progress;
+	}
+
+	// (追加) 空中にいるときにZ軸回転させる
+	if (!onGround_) {
+		const float kRotationSpeed = 0.2f;
+		worldTransform_.rotation_.z += kRotationSpeed;
+	} else {
+		// 地上にいるときは回転をリセット
+		worldTransform_.rotation_.z = 0.0f;
 	}
 
 	worldTransform_.matWorld_ = MakeAffineMatrix(worldTransform_.scale_, worldTransform_.rotation_, worldTransform_.translation_);
@@ -182,11 +192,9 @@ void Player::GroundCollision(CollisionMapInfo& info) {
 		return;
 	}
 
-
 	// 移動前の足元座標のマップチップインデックスを取得
 	MapChipField::IndexSet indexSetLeftNow = mapChipField_->GetMapChipIndexSetByPosition(CornerPosition(worldTransform_.translation_, kLeftBottom));
 	MapChipField::IndexSet indexSetRightNow = mapChipField_->GetMapChipIndexSetByPosition(CornerPosition(worldTransform_.translation_, kRightBottom));
-
 
 	Vector3 positionsNew[kNumCorner];
 	for (int i = 0; i < kNumCorner; ++i) {
@@ -201,7 +209,7 @@ void Player::GroundCollision(CollisionMapInfo& info) {
 	MapChipField::MapChipType mapChipType = mapChipField_->GetMapChipTypeByIndex(indexSetLeftNew.xIndex, indexSetLeftNew.yIndex);
 	MapChipField::MapChipType mapChipTypeNext = mapChipField_->GetMapChipTypeByIndex(indexSetLeftNew.xIndex, indexSetLeftNew.yIndex - 1);
 
-	//Yインデックスが移動前後で変わったか
+	// Yインデックスが移動前後で変わったか
 	if (mapChipType == MapChipField::MapChipType::kBlock && mapChipTypeNext != MapChipField::MapChipType::kBlock && indexSetLeftNow.yIndex != indexSetLeftNew.yIndex) {
 		hit = true;
 		MapChipField::Rect blockRect = mapChipField_->GetRectByIndex(indexSetLeftNew.xIndex, indexSetLeftNew.yIndex);
@@ -213,7 +221,7 @@ void Player::GroundCollision(CollisionMapInfo& info) {
 	mapChipType = mapChipField_->GetMapChipTypeByIndex(indexSetRightNew.xIndex, indexSetRightNew.yIndex);
 	mapChipTypeNext = mapChipField_->GetMapChipTypeByIndex(indexSetRightNew.xIndex, indexSetRightNew.yIndex - 1);
 
-	//Yインデックスが移動前後で変わったか
+	// Yインデックスが移動前後で変わったか
 	if (mapChipType == MapChipField::MapChipType::kBlock && mapChipTypeNext != MapChipField::MapChipType::kBlock && indexSetRightNow.yIndex != indexSetRightNew.yIndex) {
 		hit = true;
 		MapChipField::Rect blockRect = mapChipField_->GetRectByIndex(indexSetRightNew.xIndex, indexSetRightNew.yIndex);
@@ -344,9 +352,8 @@ void Player::LeftCollision(CollisionMapInfo& info) {
 
 void Player::OnWallCollision(const CollisionMapInfo& info) {
 
-	//壁接触による減速
+	// 壁接触による減速
 	if (info.wallCollision) {
 		velocity_.x *= (1.0f - kAttenuationWall);
 	}
-
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include "KamataEngine.h"
 #include <stdint.h>
+#include <cassert>
 
 using namespace KamataEngine;
 

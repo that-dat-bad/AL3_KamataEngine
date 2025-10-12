@@ -1,10 +1,10 @@
 #pragma once
+#include "CameraController.h"
 #include "KamataEngine.h"
 #include "MapChipField.h"
 #include "Player.h"
 #include "Skydome.h"
 #include <vector>
-#include "CameraController.h"
 
 class GameScene {
 public:
@@ -25,8 +25,8 @@ private:
 	// テクスチャハンドル
 	uint32_t textureHandle_ = 0;
 
-	// 3Dモデルデータ
-	KamataEngine::Model* model_ = nullptr;
+	// (削除) 不要なメンバ変数を削除
+	// KamataEngine::Model* model_ = nullptr;
 
 	// カメラ
 	Camera camera_;
@@ -37,7 +37,7 @@ private:
 	// 天球
 	Skydome* skydome_ = nullptr;
 
-	//カメラコントローラー
+	// カメラコントローラー
 	CameraController* cameraController_ = nullptr;
 
 	// 3Dモデルデータ

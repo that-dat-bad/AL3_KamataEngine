@@ -4,7 +4,8 @@ using namespace KamataEngine;
 
 // デストラクタ
 GameScene::~GameScene() {
-	delete model_;
+	// (削除) 不要なdelete処理を削除
+	// delete model_;
 	delete player_;
 	delete blockModel_;
 	delete skydomeModel_;
@@ -75,7 +76,6 @@ void GameScene::Update() {
 	// 自キャラの更新
 	player_->Update();
 
-
 	// ブロックの更新
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
@@ -111,7 +111,6 @@ void GameScene::Update() {
 		cameraController_->Update();
 		camera_.UpdateMatrix();
 		camera_.TransferMatrix();
-
 	}
 }
 
