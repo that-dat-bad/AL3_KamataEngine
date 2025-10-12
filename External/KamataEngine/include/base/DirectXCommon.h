@@ -89,6 +89,7 @@ public: // メンバ関数
 	/// <returns>追加された転送用リソースポインタ</returns>
 	Microsoft::WRL::ComPtr<ID3D12Resource>& AddResourcePointerForTransfer();
 
+
 private: // メンバ変数
 	// ウィンドウズアプリケーション管理
 	WinApp* winApp_;
