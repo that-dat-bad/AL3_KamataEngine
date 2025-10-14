@@ -1,11 +1,11 @@
 #include "GameScene.h"
 using namespace KamataEngine;
+#include "BulletManager.h"
 #include "mathStruct.h"
 
 // デストラクタ
 GameScene::~GameScene() {
-	// (削除) 不要なdelete処理を削除
-	// delete model_;
+
 	delete player_;
 	delete blockModel_;
 	delete skydomeModel_;
@@ -17,12 +17,14 @@ GameScene::~GameScene() {
 		row.clear(); // 行をクリア
 	}
 	worldTransformBlocks_.clear();
-	delete debugCamera_; // デバッグカメラの解放
+	delete debugCamera_;
 	delete mapChipField_;
-	delete cameraController_; // カメラコントローラの解放
+	delete cameraController_;
+	delete bulletManager_;
+	delete bulletModel_;
+	delete enemyManager_;
+	delete enemyModel_;
 }
-
-// GameScene.cpp
 
 void GameScene::Initialize() {
 	// ファイル名を指定してテクスチャを読み込む
@@ -32,6 +34,8 @@ void GameScene::Initialize() {
 	playerModel_ = Model::CreateFromOBJ("player", true);
 	blockModel_ = Model::Create();
 	skydomeModel_ = Model::CreateFromOBJ("ball", true);
+	bulletModel_ = Model::CreateFromOBJ("cube", true);
+	enemyModel_ = Model::CreateFromOBJ("enemy", true);
 
 	// カメラの初期化
 	camera_.Initialize();
@@ -41,12 +45,20 @@ void GameScene::Initialize() {
 	mapChipField_->LoadMapChipCsv("Resources/blocks.csv");
 	GenerateBlocks();
 
+	bulletManager_ = new BulletManager();
+	bulletManager_->Initialize(bulletModel_, &camera_);
+
+	enemyManager_ = new EnemyManager();
+	enemyManager_->Initialize(enemyModel_, &camera_);
+
+	enemyManager_->SpawnEnemy({30.0f, 10.0f, 0.0f});
+
 	// 自キャラ生成
 	player_ = new Player();
 	// 座標をマップチップ番号で指定
 	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(0, 18);
 	// 自キャラの初期化
-	player_->Initialize(playerModel_, &camera_, playerPosition);
+	player_->Initialize(playerModel_, &camera_, playerPosition, bulletManager_);
 
 	player_->SetMapChipField(mapChipField_);
 
@@ -75,7 +87,8 @@ void GameScene::Initialize() {
 void GameScene::Update() {
 	// 自キャラの更新
 	player_->Update();
-
+	bulletManager_->Update();
+	enemyManager_->Update();
 	// ブロックの更新
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
@@ -92,7 +105,7 @@ void GameScene::Update() {
 	// デバック時のみキーを押したときデバックカメラを有効化
 #ifdef _DEBUG
 
-	if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
+	if (Input::GetInstance()->TriggerKey(DIK_S)) {
 		isDebugCameraActive_ = !isDebugCameraActive_;
 	}
 
@@ -112,6 +125,7 @@ void GameScene::Update() {
 		camera_.UpdateMatrix();
 		camera_.TransferMatrix();
 	}
+
 }
 
 void GameScene::Draw() {
@@ -132,6 +146,8 @@ void GameScene::Draw() {
 			blockModel_->Draw(*worldTransformBlock, camera_);
 		}
 	}
+	bulletManager_->Draw();
+	enemyManager_->Draw();
 	Model::PostDraw();
 }
 

@@ -1,11 +1,12 @@
 #pragma once
+#include "BulletManager.h"
 #include "CameraController.h"
+#include "EnemyManager.h"
 #include "KamataEngine.h"
 #include "MapChipField.h"
 #include "Player.h"
 #include "Skydome.h"
 #include <vector>
-
 class GameScene {
 public:
 	~GameScene();
@@ -25,9 +26,6 @@ private:
 	// テクスチャハンドル
 	uint32_t textureHandle_ = 0;
 
-	// (削除) 不要なメンバ変数を削除
-	// KamataEngine::Model* model_ = nullptr;
-
 	// カメラ
 	Camera camera_;
 
@@ -44,6 +42,8 @@ private:
 	Model* blockModel_ = nullptr;
 	Model* playerModel_ = nullptr;
 	Model* skydomeModel_ = nullptr;
+	Model* bulletModel_ = nullptr;
+	Model* enemyModel_ = nullptr;
 
 	std::vector<std::vector<KamataEngine::WorldTransform*>> worldTransformBlocks_;
 
@@ -55,4 +55,7 @@ private:
 
 	// マップチップフィールド
 	MapChipField* mapChipField_;
+
+	BulletManager* bulletManager_ = nullptr;
+	EnemyManager* enemyManager_ = nullptr;
 };

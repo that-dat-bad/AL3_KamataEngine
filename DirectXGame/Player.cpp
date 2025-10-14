@@ -3,10 +3,14 @@
 #include <algorithm>
 #include <numbers>
 
-void Player::Initialize(Model* model, Camera* camera, const Vector3& position) {
+void Player::Initialize(Model* model, Camera* camera, const Vector3& position, BulletManager* bulletManager) {
 	assert(model);
+	assert(camera);
+	assert(bulletManager);
+
 	model_ = model;
 	camera_ = camera;
+	bulletManager_ = bulletManager;
 	worldTransform_.Initialize();
 	worldTransform_.translation_ = position;
 	worldTransform_.rotation_.y = std::numbers::pi_v<float> / 2.0f;
@@ -57,6 +61,9 @@ void Player::Update() {
 		if (canAirShot_ && Input::GetInstance()->TriggerKey(DIK_SPACE)) {
 			float angle = worldTransform_.rotation_.z;
 
+			Vector3 bulletVelocity = {cosf(angle) * 0.8f, sinf(angle) * 0.8f, 0.0f};
+			bulletManager_->SpawnBullet(worldTransform_.translation_, bulletVelocity);
+
 			velocity_.x = -cosf(angle) * kAirShotRecoil;
 			velocity_.y = -sinf(angle) * kAirShotRecoil;
 
@@ -80,11 +87,15 @@ void Player::Update() {
 	case PlayerState::kFall:
 		velocity_.y -= kGravityAcceleration;
 		if (canAirShot_ && Input::GetInstance()->TriggerKey(DIK_SPACE)) {
+			Vector3 bulletVelocity;
 			if (lrdirection_ == LRDirection::kRight) {
+				bulletVelocity = {0.8f, 0.0f, 0.0f};
 				velocity_.x = -kAirShotRecoil;
 			} else {
+				bulletVelocity = {-0.8f, 0.0f, 0.0f};
 				velocity_.x = kAirShotRecoil;
 			}
+			bulletManager_->SpawnBullet(worldTransform_.translation_, bulletVelocity);
 			velocity_.y = kAirShotRecoil * 0.5f;
 			canAirShot_ = false;
 		}

@@ -1,6 +1,7 @@
 #pragma once
 #include "KamataEngine.h"
 #include "MapChipField.h"
+#include "bulletManager.h"
 #include <cassert>
 #include <stdint.h>
 using namespace KamataEngine;
@@ -25,7 +26,7 @@ public:
 
 	enum Corner { kRightBottom, kLeftBottom, kRightTop, kLeftTop, kNumCorner };
 
-	void Initialize(Model* model, Camera* camera, const Vector3& position);
+void Initialize(Model* model, Camera* camera, const Vector3& position, BulletManager* bulletManager);
 	void Update();
 	void Draw();
 	const Vector3& GetVelocity() const { return velocity_; }
@@ -79,7 +80,7 @@ private:
 	bool canAirShot_ = true;
 
 	MapChipField* mapChipField_ = nullptr;
-
+	BulletManager* bulletManager_ = nullptr;
 	static inline const float kWidth = 1.8f;
 	static inline const float kHeight = 1.8f;
 };
