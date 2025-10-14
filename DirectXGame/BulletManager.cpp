@@ -7,9 +7,10 @@ BulletManager::~BulletManager() {
 	bullets_.clear();
 }
 
-void BulletManager::Initialize(Model* model, Camera* camera) {
+void BulletManager::Initialize(Model* model, Camera* camera, EnemyManager* enemyManager) {
 	model_ = model;
 	camera_ = camera;
+	enemyManager_ = enemyManager;
 }
 
 void BulletManager::Update() {
@@ -36,6 +37,6 @@ void BulletManager::Draw() {
 void BulletManager::SpawnBullet(const Vector3& position, const Vector3& velocity) {
 
 	Bullet* newBullet = new Bullet();
-	newBullet->Initialize(model_, camera_, position, velocity);
+	newBullet->Initialize(model_, camera_, position, velocity,enemyManager_);
 	bullets_.push_back(newBullet);
 }

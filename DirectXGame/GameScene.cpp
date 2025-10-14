@@ -45,13 +45,15 @@ void GameScene::Initialize() {
 	mapChipField_->LoadMapChipCsv("Resources/blocks.csv");
 	GenerateBlocks();
 
-	bulletManager_ = new BulletManager();
-	bulletManager_->Initialize(bulletModel_, &camera_);
+	
 
 	enemyManager_ = new EnemyManager();
 	enemyManager_->Initialize(enemyModel_, &camera_);
 
 	enemyManager_->SpawnEnemy({30.0f, 10.0f, 0.0f});
+
+	bulletManager_ = new BulletManager();
+	bulletManager_->Initialize(bulletModel_, &camera_, enemyManager_);
 
 	// 自キャラ生成
 	player_ = new Player();

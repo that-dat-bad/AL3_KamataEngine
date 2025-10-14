@@ -1,13 +1,16 @@
 #pragma once
 #include "Bullet.h"
 #include <list>
+#include"EnemyManager.h"
+
+class EnemyManager;
 
 class BulletManager {
 public:
 	~BulletManager();
 
 	// 初期化
-	void Initialize(Model* model, Camera* camera);
+	void Initialize(Model* model, Camera* camera,EnemyManager* enemyManager);
 	// 更新
 	void Update();
 	// 描画
@@ -22,4 +25,6 @@ private:
 	Camera* camera_ = nullptr;
 	// 弾のリスト
 	std::list<Bullet*> bullets_;
+
+	EnemyManager* enemyManager_ = nullptr;
 };
