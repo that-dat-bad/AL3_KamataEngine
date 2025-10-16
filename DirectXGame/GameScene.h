@@ -5,22 +5,27 @@
 #include "KamataEngine.h"
 #include "MapChipField.h"
 #include "Player.h"
-#include "Skydome.h"
+#include "TitleScene.h"
 #include <vector>
+
 class GameScene {
 public:
 	~GameScene();
 
 	// 初期化
-	void Initialize();
+	void Initialize(int stageIndex);
 
 	// 更新
-	void Update();
+	Scene Update();
 
 	// 描画
 	void Draw();
 
 	void GenerateBlocks();
+
+	static void SetSelectedStageIndex(int index) { selectedStageIndex_ = index; }
+
+	static int selectedStageIndex_;
 
 private:
 	// テクスチャハンドル
@@ -32,8 +37,6 @@ private:
 	// 自キャラ
 	Player* player_ = nullptr;
 
-	// 天球
-	Skydome* skydome_ = nullptr;
 
 	// カメラコントローラー
 	CameraController* cameraController_ = nullptr;
@@ -41,7 +44,6 @@ private:
 	// 3Dモデルデータ
 	Model* blockModel_ = nullptr;
 	Model* playerModel_ = nullptr;
-	Model* skydomeModel_ = nullptr;
 	Model* bulletModel_ = nullptr;
 	Model* enemyModel_ = nullptr;
 

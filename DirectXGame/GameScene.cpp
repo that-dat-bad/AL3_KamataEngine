@@ -1,15 +1,16 @@
 #include "GameScene.h"
+#include "KamataEngine.h"
 using namespace KamataEngine;
 #include "BulletManager.h"
 #include "mathStruct.h"
+
+int GameScene::selectedStageIndex_ = 0;
 
 // デストラクタ
 GameScene::~GameScene() {
 
 	delete player_;
 	delete blockModel_;
-	delete skydomeModel_;
-	delete skydome_;
 	for (auto& row : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : row) {
 			delete worldTransformBlock; // 各ワールド変換を解放
@@ -26,26 +27,19 @@ GameScene::~GameScene() {
 	delete enemyModel_;
 }
 
-void GameScene::Initialize() {
-	// ファイル名を指定してテクスチャを読み込む
-	textureHandle_ = TextureManager::Load("UVchecker.png");
+void GameScene::Initialize(int stageIndex) {
 
-	// 3Dモデルの生成
+	textureHandle_ = TextureManager::Load("UVchecker.png");
 	playerModel_ = Model::CreateFromOBJ("player", true);
 	blockModel_ = Model::Create();
-	skydomeModel_ = Model::CreateFromOBJ("ball", true);
 	bulletModel_ = Model::CreateFromOBJ("cube", true);
 	enemyModel_ = Model::CreateFromOBJ("enemy", true);
-
-	// カメラの初期化
 	camera_.Initialize();
-
-	// マップチップフィールドの生成と初期化
 	mapChipField_ = new MapChipField;
-	mapChipField_->LoadMapChipCsv("Resources/blocks.csv");
+	// ステージ番号に応じたCSVファイルを読み込む
+	std::string filename = "Resources/stage/stage" + std::to_string(stageIndex+1) + ".csv";
+	mapChipField_->LoadMapChipCsv(filename.c_str());
 	GenerateBlocks();
-
-	
 
 	enemyManager_ = new EnemyManager();
 	enemyManager_->Initialize(enemyModel_, &camera_);
@@ -53,12 +47,12 @@ void GameScene::Initialize() {
 	enemyManager_->SpawnEnemy({30.0f, 10.0f, 0.0f});
 
 	bulletManager_ = new BulletManager();
-	bulletManager_->Initialize(bulletModel_, &camera_, enemyManager_);
+	bulletManager_->Initialize(bulletModel_, &camera_, enemyManager_, mapChipField_);
 
 	// 自キャラ生成
 	player_ = new Player();
 	// 座標をマップチップ番号で指定
-	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(0, 18);
+	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(4, 18);
 	// 自キャラの初期化
 	player_->Initialize(playerModel_, &camera_, playerPosition, bulletManager_);
 
@@ -76,21 +70,37 @@ void GameScene::Initialize() {
 	// リセット(瞬間合わせ)
 	cameraController_->Reset();
 
-	// 天球の生成
-	skydome_ = new Skydome();
-
-	// 天球の初期化
-	skydome_->Initialize(skydomeModel_, textureHandle_, &camera_);
-
 	// デバッグカメラの生成
 	debugCamera_ = new DebugCamera(1280, 720);
 }
 
-void GameScene::Update() {
+Scene GameScene::Update() {
 	// 自キャラの更新
 	player_->Update();
 	bulletManager_->Update();
 	enemyManager_->Update();
+
+	if (!player_->IsDead()) {
+		AABB playerAABB = player_->GetAABB();
+		const std::list<Enemy*>& enemies = enemyManager_->GetEnemies();
+
+		for (Enemy* enemy : enemies) {
+			if (enemy->IsDead()) {
+				continue;
+			}
+
+			AABB enemyAABB = enemy->GetAABB();
+
+			// AABB同士で衝突しているかチェック
+			if ((playerAABB.min.x <= enemyAABB.max.x && playerAABB.max.x >= enemyAABB.min.x) && (playerAABB.min.y <= enemyAABB.max.y && playerAABB.max.y >= enemyAABB.min.y)) {
+
+				
+				player_->OnCollision();
+				break;
+			}
+		}
+	}
+
 	// ブロックの更新
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
@@ -127,14 +137,13 @@ void GameScene::Update() {
 		camera_.UpdateMatrix();
 		camera_.TransferMatrix();
 	}
-
+	return Scene::kGame;
 }
 
 void GameScene::Draw() {
 
 	// 自キャラの描画
 	player_->Draw();
-	skydome_->Draw();
 
 	Model::PreDraw(DirectXCommon::GetInstance()->GetCommandList());
 	// ブロックの描画

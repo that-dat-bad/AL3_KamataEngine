@@ -7,12 +7,12 @@ BulletManager::~BulletManager() {
 	bullets_.clear();
 }
 
-void BulletManager::Initialize(Model* model, Camera* camera, EnemyManager* enemyManager) {
+void BulletManager::Initialize(Model* model, Camera* camera, EnemyManager* enemyManager, MapChipField* mapChipField) {
 	model_ = model;
 	camera_ = camera;
 	enemyManager_ = enemyManager;
+	mapChipField_ = mapChipField;
 }
-
 void BulletManager::Update() {
 
 	for (Bullet* bullet : bullets_) {
@@ -37,6 +37,6 @@ void BulletManager::Draw() {
 void BulletManager::SpawnBullet(const Vector3& position, const Vector3& velocity) {
 
 	Bullet* newBullet = new Bullet();
-	newBullet->Initialize(model_, camera_, position, velocity,enemyManager_);
+	newBullet->Initialize(model_, camera_, position, velocity,enemyManager_,mapChipField_);
 	bullets_.push_back(newBullet);
 }

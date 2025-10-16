@@ -17,6 +17,10 @@ void Player::Initialize(Model* model, Camera* camera, const Vector3& position, B
 }
 
 void Player::Update() {
+	if (isDead_) {
+
+		return;
+	}
 	switch (state_) {
 	case PlayerState::kGround:
 		velocity_.y = 0;
@@ -25,29 +29,8 @@ void Player::Update() {
 			canAirShot_ = true;
 			state_ = PlayerState::kJump;
 		}
-		if (Input::GetInstance()->PushKey(DIK_RIGHT)) {
-			if (velocity_.x < 0.0f) {
-				velocity_.x *= (1.0f - kAttenuation);
-			}
-			velocity_.x += kAcceleration;
-			if (lrdirection_ != LRDirection::kRight) {
-				lrdirection_ = LRDirection::kRight;
-				turnFIrstRotationY_ = worldTransform_.rotation_.y;
-				turnTimer_ = kTimeTurn;
-			}
-		} else if (Input::GetInstance()->PushKey(DIK_LEFT)) {
-			if (velocity_.x > 0.0f) {
-				velocity_.x *= (1.0f - kAttenuation);
-			}
-			velocity_.x -= kAcceleration;
-			if (lrdirection_ != LRDirection::kLeft) {
-				lrdirection_ = LRDirection::kLeft;
-				turnFIrstRotationY_ = worldTransform_.rotation_.y;
-				turnTimer_ = kTimeTurn;
-			}
-		} else {
 			velocity_.x *= (1.0f - kAttenuation);
-		}
+		
 		break;
 
 	case PlayerState::kJump:
@@ -354,4 +337,13 @@ void Player::StartApexSpin() {
 	velocity_ = {};
 	apexSpinTimer_ = kApexSpinDuration;
 	state_ = PlayerState::kApexSpin;
+}
+
+AABB Player::GetAABB() {
+	Vector3 size = {kWidth, kHeight, 1.0f};
+	Vector3 worldPos = worldTransform_.translation_;
+	return {
+	    {worldPos.x - size.x / 2.0f, worldPos.y - size.y / 2.0f, worldPos.z - size.z / 2.0f}, // min
+	    {worldPos.x + size.x / 2.0f, worldPos.y + size.y / 2.0f, worldPos.z + size.z / 2.0f}  // max
+	};
 }

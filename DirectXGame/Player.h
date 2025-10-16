@@ -4,6 +4,7 @@
 #include "bulletManager.h"
 #include <cassert>
 #include <stdint.h>
+#include"collision.h"
 using namespace KamataEngine;
 
 class MapChipField;
@@ -42,6 +43,9 @@ void Initialize(Model* model, Camera* camera, const Vector3& position, BulletMan
 	void LeftCollision(CollisionMapInfo& info);
 	void OnWallCollision(const CollisionMapInfo& info);
 	bool IsOnGround();
+	bool IsDead() const { return isDead_; }
+	void OnCollision() { isDead_ = true; }
+	AABB GetAABB();
 
 private:
 	void StartApexSpin();
@@ -83,4 +87,5 @@ private:
 	BulletManager* bulletManager_ = nullptr;
 	static inline const float kWidth = 1.8f;
 	static inline const float kHeight = 1.8f;
+	bool isDead_ = false;
 };
