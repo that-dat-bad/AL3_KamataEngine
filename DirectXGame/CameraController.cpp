@@ -16,8 +16,12 @@ void CameraController::Update() {
 
 	camera_->translation_ = Lerp(camera_->translation_, targetPosition_, kInterpolationRate);
 
-	camera_->translation_.x = (std::max)(camera_->translation_.x, target_->GetWorldTransform().translation_.x + kMargin.left);
-	camera_->translation_.x = (std::min)(camera_->translation_.x, target_->GetWorldTransform().translation_.x + kMargin.right);
+	//camera_->translation_.x = (std::max)(camera_->translation_.x, target_->GetWorldTransform().translation_.x + kMargin.left);
+	//camera_->translation_.x = (std::min)(camera_->translation_.x, target_->GetWorldTransform().translation_.x + kMargin.right);
+	//camera_->translation_.y = (std::max)(camera_->translation_.y, target_->GetWorldTransform().translation_.y + kMargin.bottom);
+	//camera_->translation_.y = (std::min)(camera_->translation_.y, target_->GetWorldTransform().translation_.y + kMargin.top);
+
+	camera_->translation_.x = targetWorldTransform.translation_.x;
 	camera_->translation_.y = (std::max)(camera_->translation_.y, target_->GetWorldTransform().translation_.y + kMargin.bottom);
 	camera_->translation_.y = (std::min)(camera_->translation_.y, target_->GetWorldTransform().translation_.y + kMargin.top);
 

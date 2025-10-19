@@ -1,22 +1,18 @@
 #pragma once
+#include "BulletManager.h"
+#include "Collision.h"
 #include "KamataEngine.h"
 #include "MapChipField.h"
-#include "bulletManager.h"
 #include <cassert>
 #include <stdint.h>
-#include"collision.h"
+
 using namespace KamataEngine;
 
 class MapChipField;
 
 class Player {
 public:
-	enum class PlayerState {
-		kGround,
-		kJump,
-		kApexSpin,
-		kFall,
-	};
+	enum class PlayerState { kGround, kJump, kApexSpin, kFall };
 
 	struct CollisionMapInfo {
 		bool ceilingCollision = false;
@@ -27,12 +23,18 @@ public:
 
 	enum Corner { kRightBottom, kLeftBottom, kRightTop, kLeftTop, kNumCorner };
 
-void Initialize(Model* model, Camera* camera, const Vector3& position, BulletManager* bulletManager);
+	void Initialize(Model* model, Model* arrowModel, Camera* camera, const Vector3& position, BulletManager* bulletManager);
 	void Update();
 	void Draw();
+
 	const Vector3& GetVelocity() const { return velocity_; }
 	const WorldTransform& GetWorldTransform() const { return worldTransform_; }
 	void SetMapChipField(MapChipField* mapChipField) { mapChipField_ = mapChipField; }
+
+	bool IsDead() const { return isDead_; }
+	void OnCollision() { isDead_ = true; }
+	AABB GetAABB();
+
 	void MapCollider(CollisionMapInfo& info);
 	void CeilingCollision(CollisionMapInfo& info);
 	Vector3 CornerPosition(const Vector3& center, Corner corner);
@@ -43,9 +45,6 @@ void Initialize(Model* model, Camera* camera, const Vector3& position, BulletMan
 	void LeftCollision(CollisionMapInfo& info);
 	void OnWallCollision(const CollisionMapInfo& info);
 	bool IsOnGround();
-	bool IsDead() const { return isDead_; }
-	void OnCollision() { isDead_ = true; }
-	AABB GetAABB();
 
 private:
 	void StartApexSpin();
@@ -53,7 +52,13 @@ private:
 	WorldTransform worldTransform_;
 	Model* model_ = nullptr;
 	Camera* camera_ = nullptr;
+
+	WorldTransform arrowWorldTransform_;
+	Model* arrowModel_ = nullptr;
+
 	Vector3 velocity_ = {};
+	BulletManager* bulletManager_ = nullptr;
+	bool isDead_ = false;
 
 	static inline const float kAcceleration = 0.03f;
 	static inline const float kAttenuation = 0.02f;
@@ -69,10 +74,7 @@ private:
 	static inline const float kAttenuationLanding = 0.05f;
 	static inline const float kAttenuationWall = 0.2f;
 
-	enum class LRDirection {
-		kRight,
-		kLeft,
-	};
+	enum class LRDirection { kRight, kLeft };
 	LRDirection lrdirection_ = LRDirection::kRight;
 
 	float turnFIrstRotationY_ = 0.0f;
@@ -80,12 +82,9 @@ private:
 
 	PlayerState state_ = PlayerState::kGround;
 	int apexSpinTimer_ = 0;
-
 	bool canAirShot_ = true;
-
 	MapChipField* mapChipField_ = nullptr;
-	BulletManager* bulletManager_ = nullptr;
+
 	static inline const float kWidth = 1.8f;
 	static inline const float kHeight = 1.8f;
-	bool isDead_ = false;
 };

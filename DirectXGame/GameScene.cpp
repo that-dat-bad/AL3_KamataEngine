@@ -25,6 +25,7 @@ GameScene::~GameScene() {
 	delete bulletModel_;
 	delete enemyManager_;
 	delete enemyModel_;
+	delete arrowModel_;
 }
 
 void GameScene::Initialize(int stageIndex) {
@@ -34,6 +35,7 @@ void GameScene::Initialize(int stageIndex) {
 	blockModel_ = Model::Create();
 	bulletModel_ = Model::CreateFromOBJ("cube", true);
 	enemyModel_ = Model::CreateFromOBJ("enemy", true);
+	arrowModel_ = Model::CreateFromOBJ("player", true);
 	camera_.Initialize();
 	mapChipField_ = new MapChipField;
 	// ステージ番号に応じたCSVファイルを読み込む
@@ -54,7 +56,7 @@ void GameScene::Initialize(int stageIndex) {
 	// 座標をマップチップ番号で指定
 	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(4, 18);
 	// 自キャラの初期化
-	player_->Initialize(playerModel_, &camera_, playerPosition, bulletManager_);
+	player_->Initialize(playerModel_, arrowModel_, &camera_, playerPosition, bulletManager_);
 
 	player_->SetMapChipField(mapChipField_);
 

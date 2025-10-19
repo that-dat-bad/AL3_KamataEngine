@@ -34,7 +34,7 @@ private:
 	Player* target_ = nullptr;
 
 	// 追跡対象とカメラの座標の差(オフセット)
-	Vector3 targetOffset_ = {0, 0, -50.0f};
+	Vector3 targetOffset_ = {0, 0, -30.0f};
 
 	Rect movableArea_ = {0.0f, 100, 0.0f, 100}; // 移動可能領域の矩形
 

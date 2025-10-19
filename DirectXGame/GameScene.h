@@ -46,6 +46,7 @@ private:
 	Model* playerModel_ = nullptr;
 	Model* bulletModel_ = nullptr;
 	Model* enemyModel_ = nullptr;
+	Model* arrowModel_ = nullptr;
 
 	std::vector<std::vector<KamataEngine::WorldTransform*>> worldTransformBlocks_;
 

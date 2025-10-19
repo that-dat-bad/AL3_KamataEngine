@@ -24,7 +24,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// 初期化
 	titleScene->Initialize();
 	stageSelectScene->Initialize();
-	// GameSceneはステージ選択後に初期化される
 
 	// メインループ
 	while (true) {
