@@ -34,6 +34,8 @@ public:
 	bool IsDead() const { return isDead_; }
 	void OnCollision() { isDead_ = true; }
 	AABB GetAABB();
+	void OnEnemyStomp();
+	bool stompJumpAvailable_ = false;
 
 	void MapCollider(CollisionMapInfo& info);
 	void CeilingCollision(CollisionMapInfo& info);

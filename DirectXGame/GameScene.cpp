@@ -82,7 +82,7 @@ Scene GameScene::Update() {
 	bulletManager_->Update();
 	enemyManager_->Update();
 
-	if (!player_->IsDead()) {
+if (!player_->IsDead()) {
 		AABB playerAABB = player_->GetAABB();
 		const std::list<Enemy*>& enemies = enemyManager_->GetEnemies();
 
@@ -93,12 +93,20 @@ Scene GameScene::Update() {
 
 			AABB enemyAABB = enemy->GetAABB();
 
-			// AABB同士で衝突しているかチェック
+
 			if ((playerAABB.min.x <= enemyAABB.max.x && playerAABB.max.x >= enemyAABB.min.x) && (playerAABB.min.y <= enemyAABB.max.y && playerAABB.max.y >= enemyAABB.min.y)) {
 
-				
-				player_->OnCollision();
-				break;
+
+				if (player_->GetVelocity().y < 0 && playerAABB.min.y > enemyAABB.min.y) {
+					// 踏みつけ成功
+					enemy->OnCollision();    // 敵を倒す
+					player_->OnEnemyStomp(); // プレイヤーに踏んだことを通知
+				} else {
+
+					player_->OnCollision();
+				}
+
+				break; // 一体処理したらループを抜ける
 			}
 		}
 	}

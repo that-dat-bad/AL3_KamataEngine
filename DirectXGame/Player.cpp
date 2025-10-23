@@ -61,6 +61,11 @@ void Player::Update() {
 		break;
 
 	case PlayerState::kJump:
+		if (stompJumpAvailable_ && Input::GetInstance()->TriggerKey(DIK_SPACE)) {
+			StartApexSpin();
+			stompJumpAvailable_ = false; 
+			break;
+		}
 		velocity_.y -= kGravityAcceleration;
 		if (velocity_.y <= 0.0f) {
 			StartApexSpin();
@@ -356,4 +361,10 @@ AABB Player::GetAABB() {
 	    {worldPos.x - size.x / 2.0f, worldPos.y - size.y / 2.0f, worldPos.z - size.z / 2.0f},
         {worldPos.x + size.x / 2.0f, worldPos.y + size.y / 2.0f, worldPos.z + size.z / 2.0f}
     };
+}
+
+void Player::OnEnemyStomp() {
+	velocity_.y = kJumpVelocity * 0.8f;
+	canAirShot_ = true;
+	StartApexSpin();
 }
