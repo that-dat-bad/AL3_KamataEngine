@@ -20,10 +20,12 @@ void Player::Initialize(Model* model, Model* arrowModel, Camera* camera, const V
 
 	arrowWorldTransform_.Initialize();
 	arrowWorldTransform_.scale_ = {2.0f, 2.0f, 2.0f};
+	playingState_ = PlayingState::kPlaying;
 }
 
 void Player::Update() {
 	if (isDead_) {
+		playingState_ = PlayingState::kGameOver;
 		return;
 	}
 
@@ -32,6 +34,7 @@ void Player::Update() {
 		velocity_.y = 0;
 		if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
 			velocity_.y = kJumpVelocity;
+			stompJumpAvailable_ = false;
 			canAirShot_ = true;
 			state_ = PlayerState::kJump;
 		}
@@ -63,7 +66,7 @@ void Player::Update() {
 	case PlayerState::kJump:
 		if (stompJumpAvailable_ && Input::GetInstance()->TriggerKey(DIK_SPACE)) {
 			StartApexSpin();
-			stompJumpAvailable_ = false; 
+			stompJumpAvailable_ = false;
 			break;
 		}
 		velocity_.y -= kGravityAcceleration;
@@ -76,10 +79,11 @@ void Player::Update() {
 		if (canAirShot_ && Input::GetInstance()->TriggerKey(DIK_SPACE)) {
 			float angle = worldTransform_.rotation_.z;
 			Vector3 bulletVelocity = {cosf(angle) * 0.8f, sinf(angle) * 0.8f, 0.0f};
-			bulletManager_->SpawnBullet(worldTransform_.translation_, bulletVelocity);
+			bulletManager_->SpawnBullet(worldTransform_.translation_, bulletVelocity, this);
 			velocity_.x = -cosf(angle) * kAirShotRecoil;
 			velocity_.y = -sinf(angle) * kAirShotRecoil;
 			canAirShot_ = false;
+			stompJumpAvailable_ = false;
 			worldTransform_.rotation_.z = 0;
 			state_ = PlayerState::kFall;
 			break;
@@ -97,11 +101,9 @@ void Player::Update() {
 
 		arrowWorldTransform_.rotation_.y = worldTransform_.rotation_.y;
 		arrowWorldTransform_.rotation_.z = worldTransform_.rotation_.z + std::numbers::pi_v<float>;
-
 		float offsetDistance = 2.0f;
 		Vector3 offsetDirection = {cosf(arrowWorldTransform_.rotation_.z), sinf(arrowWorldTransform_.rotation_.z), 0.0f};
 		arrowWorldTransform_.translation_ = worldTransform_.translation_ + offsetDirection * offsetDistance;
-
 		arrowWorldTransform_.matWorld_ = MakeAffineMatrix(arrowWorldTransform_.scale_, arrowWorldTransform_.rotation_, arrowWorldTransform_.translation_);
 		arrowWorldTransform_.TransferMatrix();
 
@@ -109,20 +111,14 @@ void Player::Update() {
 	}
 
 	case PlayerState::kFall:
-		velocity_.y -= kGravityAcceleration;
-		if (canAirShot_ && Input::GetInstance()->TriggerKey(DIK_SPACE)) {
-			Vector3 bulletVelocity;
-			if (lrdirection_ == LRDirection::kRight) {
-				bulletVelocity = {0.8f, 0.0f, 0.0f};
-				velocity_.x = -kAirShotRecoil;
-			} else {
-				bulletVelocity = {-0.8f, 0.0f, 0.0f};
-				velocity_.x = kAirShotRecoil;
-			}
-			bulletManager_->SpawnBullet(worldTransform_.translation_, bulletVelocity);
-			velocity_.y = kAirShotRecoil * 0.5f;
-			canAirShot_ = false;
+		if (stompJumpAvailable_ && Input::GetInstance()->TriggerKey(DIK_SPACE)) {
+			StartApexSpin();
+			stompJumpAvailable_ = false; 
+			break;                       
 		}
+
+		velocity_.y -= kGravityAcceleration;
+
 		break;
 	}
 
@@ -136,9 +132,12 @@ void Player::Update() {
 	ResultReflectToMove(collisionMapInfo);
 
 	OnCeilingCollision(collisionMapInfo);
+
 	if (state_ == PlayerState::kFall && collisionMapInfo.groundCollision) {
 		state_ = PlayerState::kGround;
+		stompJumpAvailable_ = false;
 	}
+
 	if (state_ == PlayerState::kGround) {
 		if (!IsOnGround()) {
 			state_ = PlayerState::kFall;
@@ -163,14 +162,17 @@ void Player::Update() {
 
 void Player::Draw() {
 	Model::PreDraw(DirectXCommon::GetInstance()->GetCommandList());
-
 	model_->Draw(worldTransform_, *camera_);
-
 	if (state_ == PlayerState::kApexSpin) {
 		arrowModel_->Draw(arrowWorldTransform_, *camera_);
 	}
-
 	Model::PostDraw();
+}
+
+void Player::OnEnemyStomp() {
+	velocity_.y = kJumpVelocity * 0.8f;
+	ResetAirAction();
+	state_ = PlayerState::kJump;
 }
 
 void Player::MapCollider(CollisionMapInfo& info) {
@@ -361,10 +363,4 @@ AABB Player::GetAABB() {
 	    {worldPos.x - size.x / 2.0f, worldPos.y - size.y / 2.0f, worldPos.z - size.z / 2.0f},
         {worldPos.x + size.x / 2.0f, worldPos.y + size.y / 2.0f, worldPos.z + size.z / 2.0f}
     };
-}
-
-void Player::OnEnemyStomp() {
-	velocity_.y = kJumpVelocity * 0.8f;
-	canAirShot_ = true;
-	StartApexSpin();
 }

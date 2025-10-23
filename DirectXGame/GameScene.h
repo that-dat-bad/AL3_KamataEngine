@@ -16,7 +16,7 @@ public:
 	void Initialize(int stageIndex);
 
 	// 更新
-	Scene Update();
+	SceneManager Update();
 
 	// 描画
 	void Draw();

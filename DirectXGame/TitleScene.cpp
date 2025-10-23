@@ -1,18 +1,14 @@
 #include "TitleScene.h"
-#include "GameScene.h" 
+#include "KamataEngine.h"
+#include "SceneManager.h"
+using namespace KamataEngine;
+void TitleScene::Initialize() { ; }
 
-void TitleScene::Initialize() {
-;
-}
-
-Scene TitleScene::Update() {
-	// スペースキーが押されたらステージセレクトへ
+SceneManager TitleScene::Update() {
 	if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
-		return Scene::kStageSelect;
+		return SceneManager::kGame;
 	}
-	return Scene::kTitle;
+	return SceneManager::kTitle;
 }
 
-void TitleScene::Draw() {
-	
-}
+void TitleScene::Draw() {}

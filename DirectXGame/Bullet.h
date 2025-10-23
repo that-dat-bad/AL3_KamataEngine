@@ -12,10 +12,12 @@ class MapChipField;
 
 class EnemyManager;
 
+class Player;
+
 class Bullet {
 public:
 	// 初期化
-	void Initialize(Model* model, Camera* camera, const Vector3& position, const Vector3& velocity, EnemyManager* enemyManager, MapChipField* mapchipField);
+	void Initialize(Model* model, Camera* camera, const Vector3& position, const Vector3& velocity, EnemyManager* enemyManager, MapChipField* mapChipField, Player* player);
 	// 更新
 	void Update();
 	// 描画
@@ -32,6 +34,7 @@ private:
 	Camera* camera_ = nullptr;
 	Vector3 velocity_ = {};
 	MapChipField* mapChipField_;
+	Player* player_ = nullptr;
 	
 	static inline const int32_t kLifeTime = 120;
 	int32_t lifeTimer_ = kLifeTime;

@@ -1,2 +1,6 @@
 #pragma once
-class SceneManager {};
+enum class SceneManager { 
+	kTitle,
+	kGame,
+	kResult,
+	kSceneCount };

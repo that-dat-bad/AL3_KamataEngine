@@ -13,6 +13,7 @@ class MapChipField;
 class Player {
 public:
 	enum class PlayerState { kGround, kJump, kApexSpin, kFall };
+	enum class PlayingState { kPlaying, kGameOver, kStateCount };
 
 	struct CollisionMapInfo {
 		bool ceilingCollision = false;
@@ -35,8 +36,12 @@ public:
 	void OnCollision() { isDead_ = true; }
 	AABB GetAABB();
 	void OnEnemyStomp();
-	bool stompJumpAvailable_ = false;
-
+	void ResetAirShot() { canAirShot_ = true; }
+	bool IsInAir() const { return state_ != PlayerState::kGround; }
+	void ResetAirAction() {
+		canAirShot_ = true;
+		stompJumpAvailable_ = true;
+	}
 	void MapCollider(CollisionMapInfo& info);
 	void CeilingCollision(CollisionMapInfo& info);
 	Vector3 CornerPosition(const Vector3& center, Corner corner);
@@ -83,10 +88,13 @@ private:
 	float turnTimer_ = 0.0f;
 
 	PlayerState state_ = PlayerState::kGround;
+	PlayingState playingState_ = PlayingState::kPlaying;
 	int apexSpinTimer_ = 0;
 	bool canAirShot_ = true;
 	MapChipField* mapChipField_ = nullptr;
 
 	static inline const float kWidth = 1.8f;
 	static inline const float kHeight = 1.8f;
+
+	bool stompJumpAvailable_ = false;
 };

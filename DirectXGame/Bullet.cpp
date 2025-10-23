@@ -1,17 +1,20 @@
 #include "Bullet.h"
 #include "EnemyManager.h"
 #include "MapChipField.h"
+#include "Player.h"
 
-void Bullet::Initialize(Model* model, Camera* camera, const Vector3& position, const Vector3& velocity, EnemyManager* enemyManager, MapChipField* mapChipField) {
+void Bullet::Initialize(Model* model, Camera* camera, const Vector3& position, const Vector3& velocity, EnemyManager* enemyManager, MapChipField* mapChipField, Player* player) {
 	assert(model);
 	assert(camera);
 	assert(enemyManager);
+	assert(player);
 
 	model_ = model;
 	camera_ = camera;
 	velocity_ = velocity;
 	enemyManager_ = enemyManager;
 	mapChipField_ = mapChipField;
+	player_ = player;
 
 	worldTransform_.Initialize();
 	worldTransform_.translation_ = position;
@@ -42,6 +45,9 @@ void Bullet::Update() {
 
 			enemy->OnCollision();
 			isDead_ = true;
+			if (player_->IsInAir()) {
+				player_->ResetAirShot();
+			}
 			break;
 		}
 	}

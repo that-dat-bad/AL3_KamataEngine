@@ -34,9 +34,10 @@ void BulletManager::Draw() {
 	}
 }
 
-void BulletManager::SpawnBullet(const Vector3& position, const Vector3& velocity) {
-
+void BulletManager::SpawnBullet(const Vector3& position, const Vector3& velocity, Player* player) {
 	Bullet* newBullet = new Bullet();
-	newBullet->Initialize(model_, camera_, position, velocity,enemyManager_,mapChipField_);
+
+	newBullet->Initialize(model_, camera_, position, velocity, enemyManager_, mapChipField_, player);
+
 	bullets_.push_back(newBullet);
 }

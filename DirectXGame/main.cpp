@@ -1,8 +1,7 @@
 #include "KamataEngine.h"
 #include <Windows.h>
 #include "GameScene.h"
-#include "StageSelectScene.h"
-#include "TitleScene.h"
+#include "SceneManager.h"
 
 using namespace KamataEngine;
 
@@ -15,15 +14,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// 各シーンのインスタンスを生成
 	TitleScene* titleScene = new TitleScene();
-	StageSelectScene* stageSelectScene = new StageSelectScene();
 	GameScene* gameScene = new GameScene();
 
 	// 初期シーンを設定
-	Scene currentScene = Scene::kTitle;
+	SceneManager currentScene = SceneManager::kTitle;
 
 	// 初期化
 	titleScene->Initialize();
-	stageSelectScene->Initialize();
 
 	// メインループ
 	while (true) {
@@ -34,38 +31,30 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		KamataEngine::ImGuiManager::GetInstance()->Begin();
 
-		Scene nextScene = currentScene;
+		SceneManager nextScene = currentScene;
 		switch (currentScene) {
-		case Scene::kTitle:
+		case SceneManager::kTitle:
 			nextScene = titleScene->Update();
 			break;
-		case Scene::kStageSelect:
-			nextScene = stageSelectScene->Update();
-			break;
-		case Scene::kGame:
+		case SceneManager::kGame:
 			nextScene = gameScene->Update();
 			break;
 		}
 
 		if (nextScene != currentScene) {
-			if (nextScene == Scene::kGame) {
+			if (nextScene == SceneManager::kGame) {
 				gameScene->Initialize(GameScene::selectedStageIndex_);
-			} else if (nextScene == Scene::kStageSelect) {
-				stageSelectScene->Initialize();
-			}
+			} 
 			currentScene = nextScene;
 		}
 
 		dxCommon->PreDraw();
 
 		switch (currentScene) {
-		case Scene::kTitle:
+		case SceneManager::kTitle:
 			titleScene->Draw();
 			break;
-		case Scene::kStageSelect:
-			stageSelectScene->Draw();
-			break;
-		case Scene::kGame:
+		case SceneManager::kGame:
 			gameScene->Draw();
 			break;
 		}
@@ -76,7 +65,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// 解放処理
 	delete titleScene;
-	delete stageSelectScene;
 	delete gameScene;
 
 	KamataEngine::Finalize();

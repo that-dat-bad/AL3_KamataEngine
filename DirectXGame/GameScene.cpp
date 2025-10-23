@@ -3,6 +3,7 @@
 using namespace KamataEngine;
 #include "BulletManager.h"
 #include "mathStruct.h"
+#include"SceneManager.h"
 
 int GameScene::selectedStageIndex_ = 0;
 
@@ -76,7 +77,7 @@ void GameScene::Initialize(int stageIndex) {
 	debugCamera_ = new DebugCamera(1280, 720);
 }
 
-Scene GameScene::Update() {
+SceneManager GameScene::Update() {
 	// 自キャラの更新
 	player_->Update();
 	bulletManager_->Update();
@@ -109,8 +110,10 @@ if (!player_->IsDead()) {
 				break; // 一体処理したらループを抜ける
 			}
 		}
-	}
+	} else {
+	return SceneManager::kResult;
 
+}
 	// ブロックの更新
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
@@ -147,7 +150,7 @@ if (!player_->IsDead()) {
 		camera_.UpdateMatrix();
 		camera_.TransferMatrix();
 	}
-	return Scene::kGame;
+	return SceneManager::kGame;
 }
 
 void GameScene::Draw() {

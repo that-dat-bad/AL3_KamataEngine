@@ -4,6 +4,7 @@
 #include"EnemyManager.h"
 #include "MapChipField.h"
 class EnemyManager;
+class Player;
 
 class BulletManager {
 public:
@@ -17,7 +18,7 @@ public:
 	void Draw();
 
 	// 弾の生成
-	void SpawnBullet(const Vector3& position, const Vector3& velocity);
+	void SpawnBullet(const Vector3& position, const Vector3& velocity, Player* player);
 
 private:
 	
