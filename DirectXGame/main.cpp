@@ -1,6 +1,7 @@
 #include "KamataEngine.h"
 #include <Windows.h>
 #include "GameScene.h"
+#include "ResultScene.h"
 #include "SceneManager.h"
 
 using namespace KamataEngine;
@@ -15,7 +16,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// 各シーンのインスタンスを生成
 	TitleScene* titleScene = new TitleScene();
 	GameScene* gameScene = new GameScene();
-
+	ResultScene* resultScene = new ResultScene();
 	// 初期シーンを設定
 	SceneManager currentScene = SceneManager::kTitle;
 
@@ -39,6 +40,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		case SceneManager::kGame:
 			nextScene = gameScene->Update();
 			break;
+		case SceneManager::kResult:
+			 nextScene = resultScene->Update();
+			break;
 		}
 
 		if (nextScene != currentScene) {
@@ -56,6 +60,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			break;
 		case SceneManager::kGame:
 			gameScene->Draw();
+			break;
+		case SceneManager::kResult:
+			resultScene->Draw();
 			break;
 		}
 

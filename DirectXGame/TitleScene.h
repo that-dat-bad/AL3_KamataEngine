@@ -2,8 +2,6 @@
 #include "KamataEngine.h"
 #include "SceneManager.h"
 
-
-
 class TitleScene {
 public:
 	void Initialize();
@@ -12,5 +10,5 @@ public:
 
 private:
 	uint32_t titleTexture_ = 0;
-	uint32_t promptTexture_ = 0;
+	uint32_t textTexture_ = 0;
 };
