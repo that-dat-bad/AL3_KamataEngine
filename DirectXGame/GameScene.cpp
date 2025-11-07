@@ -1,6 +1,5 @@
 #include "GameScene.h"
-#include "3d/AxisIndicator.h"
-#include "input/Input.h"
+
 #include "Player.h"
 #include <assert.h>
 
@@ -40,6 +39,15 @@ void GameScene::Update() {
 	if (input_->TriggerKey(DIK_SPACE)) {
 		isDebugCameraActive_ = !isDebugCameraActive_;
 	}
+
+	// ★修正箇所★
+	// デバッグカメラが有効な時だけImGuiウィンドウを表示
+	if (isDebugCameraActive_) {
+		ImGui::Begin("Debug Camera");
+		ImGui::Text("Debug Camera: ON");
+		ImGui::End();
+	}
+
 #endif
 
 	// カメラの処理
@@ -58,4 +66,10 @@ void GameScene::Update() {
 	}
 }
 
-void GameScene::Draw() { player_->Draw(); }
+void GameScene::Draw() {
+	// プレイヤーの描画
+	player_->Draw();
+
+	// 軸方向表示の描画
+	AxisIndicator::GetInstance()->Draw();
+}

@@ -1,5 +1,4 @@
 #pragma once
-#include "input/Input.h"
 #include "KamataEngine.h"
 #include <stdint.h>
 

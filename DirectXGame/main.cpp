@@ -1,4 +1,3 @@
-#include "2d/ImGuiManager.h"
 #include "GameScene.h"
 #include "KamataEngine.h"
 #include <Windows.h>

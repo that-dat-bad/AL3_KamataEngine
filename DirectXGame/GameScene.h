@@ -1,6 +1,4 @@
 #pragma once
-#include "3d/DebugCamera.h"
-#include "input/Input.h"
 #include "KamataEngine.h"
 #include "Player.h"
 

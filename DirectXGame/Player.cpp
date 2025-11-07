@@ -1,6 +1,4 @@
 #include "Player.h"
-#include "2d/ImGuiManager.h"
-#include "input/Input.h"
 #include "mathStruct.h"
 #include <algorithm>
 #include <cassert>
