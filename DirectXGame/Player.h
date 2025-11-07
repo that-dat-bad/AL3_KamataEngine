@@ -1,19 +1,18 @@
 #pragma once
+#include "input/Input.h"
 #include "KamataEngine.h"
 #include <stdint.h>
 
-
-
 class Player {
 public:
-	void Initialize(KamataEngine::Model* model,uint32_t textureHandle,KamataEngine::Camera* camera);
+	void Initialize(KamataEngine::Model* model, uint32_t textureHandle, KamataEngine::Camera* camera);
 
 	void Update();
 
 	void Draw();
 
 private:
-	//ワールド変換データ
+	// ワールド変換データ
 	KamataEngine::WorldTransform worldTransform_;
 	// 3Dモデルデータ
 	KamataEngine::Model* model_ = nullptr;
@@ -22,4 +21,6 @@ private:
 
 	KamataEngine::Camera* camera_ = nullptr;
 
+	// キーボード入力
+	KamataEngine::Input* input_ = nullptr;
 };
