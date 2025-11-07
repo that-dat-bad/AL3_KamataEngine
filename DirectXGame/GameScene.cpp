@@ -1,5 +1,4 @@
 #include "GameScene.h"
-
 #include "Player.h"
 #include <assert.h>
 
@@ -36,11 +35,10 @@ void GameScene::Update() {
 
 #ifdef _DEBUG
 	// デバッグカメラ切り替え
-	if (input_->TriggerKey(DIK_SPACE)) {
+	if (input_->TriggerKey(DIK_C)) {
 		isDebugCameraActive_ = !isDebugCameraActive_;
 	}
 
-	// ★修正箇所★
 	// デバッグカメラが有効な時だけImGuiウィンドウを表示
 	if (isDebugCameraActive_) {
 		ImGui::Begin("Debug Camera");

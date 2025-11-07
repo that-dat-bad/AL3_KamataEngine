@@ -41,6 +41,14 @@ void Player::Update() {
 	// 座標移動（ベクトルの加算）
 	worldTransform_.translation_ += move;
 
+	// 旋回（回転）
+	const float kRotSpeed = 0.02f;
+	if (input_->PushKey(DIK_A)) {
+		worldTransform_.rotation_.y -= kRotSpeed;
+	} else if (input_->PushKey(DIK_D)) {
+		worldTransform_.rotation_.y += kRotSpeed;
+	}
+
 	// 移動限界座標
 	const float kMoveLimitX = 10.0f;
 	const float kMoveLimitY = 5.0f;
@@ -51,21 +59,45 @@ void Player::Update() {
 	worldTransform_.translation_.y = (std::max)(worldTransform_.translation_.y, -kMoveLimitY);
 	worldTransform_.translation_.y = (std::min)(worldTransform_.translation_.y, +kMoveLimitY);
 
+	// キャラクター攻撃処理
+	Attack();
+
+	// 弾更新
+	if (bullet_) {
+		bullet_->Update();
+	}
+
 	// キャラクターの座標を画面表示する処理
 	ImGui::Begin("Player Info");
 	ImGui::Text("Translation: (%.2f, %.2f, %.2f)", worldTransform_.translation_.x, worldTransform_.translation_.y, worldTransform_.translation_.z);
 	ImGui::End();
 
-	// アフィン変換行列の作成
-	worldTransform_.matWorld_ = MakeAffineMatrix(worldTransform_.scale_, worldTransform_.rotation_, worldTransform_.translation_);
-
-	// 定数バッファに転送
-	worldTransform_.TransferMatrix();
+	// ワールド行列更新
+	UpdateWorldMatrix(worldTransform_);
 }
 
 void Player::Draw() {
 	KamataEngine::DirectXCommon* dxCommon = KamataEngine::DirectXCommon::GetInstance();
+
 	KamataEngine::Model::PreDraw(dxCommon->GetCommandList());
+
 	model_->Draw(worldTransform_, *camera_, textureHandle_);
+
+	if (bullet_) {
+		bullet_->Draw(*camera_);
+	}
+
 	KamataEngine::Model::PostDraw();
+}
+
+void Player::Attack() {
+	if (input_->TriggerKey(DIK_SPACE)) {
+
+		// 弾を生成し、初期化
+		PlayerBullet* newBullet = new PlayerBullet();
+		newBullet->Initialize(model_, worldTransform_.translation_);
+
+		// 弾を登録する
+		bullet_ = newBullet;
+	}
 }

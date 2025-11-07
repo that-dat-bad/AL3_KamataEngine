@@ -29,10 +29,10 @@ private:
 
 	KamataEngine::WorldTransform worldTransform_;
 
-	// キーボード入力 (修正箇所)
+	// キーボード入力
 	KamataEngine::Input* input_ = nullptr;
 
-	// デバッグカメラ (修正箇所)
+	// デバッグカメラ
 	KamataEngine::DebugCamera* debugCamera_ = nullptr;
 
 	// デバッグカメラ有効

@@ -7,7 +7,6 @@ struct AABB {
 	Vector3 max;
 };
 
-
 Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2);
 
 Matrix4x4 Identity4x4();
@@ -24,13 +23,13 @@ Matrix4x4 MakeRotateZMatrix(float radian);
 
 Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3& translate);
 
+void UpdateWorldMatrix(KamataEngine::WorldTransform& worldTransform);
+
 Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t);
 
 Vector3 operator+(const Vector3& v1, const Vector3& v2);
 
 Vector3 operator+=(Vector3& v1, const Vector3& v2);
-
-
 
 bool AABBCollision(const AABB& aabb1, const AABB& aabb2);
 

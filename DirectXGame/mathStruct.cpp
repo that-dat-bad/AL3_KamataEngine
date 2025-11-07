@@ -90,6 +90,13 @@ Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Ve
 	return Multiply(Multiply(Multiply(Multiply(scaleMatrix, rotateX), rotateY), rotateZ), translateMatrix);
 }
 
+void UpdateWorldMatrix(KamataEngine::WorldTransform& worldTransform) {
+	// スケール、回転、平行移動を合成して行列を計算する
+	worldTransform.matWorld_ = MakeAffineMatrix(worldTransform.scale_, worldTransform.rotation_, worldTransform.translation_);
+	// 定数バッファへの書き込み
+	worldTransform.TransferMatrix();
+}
+
 Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t) {
 	Vector3 buf;
 	buf.x = v1.x + (v2.x - v1.x) * t;

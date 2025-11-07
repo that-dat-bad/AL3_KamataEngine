@@ -1,3 +1,4 @@
+#include "2d/ImGuiManager.h"
 #include "GameScene.h"
 #include "KamataEngine.h"
 #include <Windows.h>
@@ -8,7 +9,7 @@ using namespace KamataEngine;
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// エンジンの初期化
-	KamataEngine::Initialize(L"LE2B_14_タカナガ_ダイキ_AL4");
+	KamataEngine::Initialize(L"LE2B_14_タカナガ_ダイキ_AL3");
 	// DirectXCommonインスタンスの取得
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 
@@ -29,10 +30,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			break;
 		}
 
+		// ImGuiフレーム開始
 		imguiManager->Begin();
+
+		// ゲームシーンの更新
 		gameScene->Update();
 
-
+		// ImGuiフレーム終了
 		imguiManager->End();
 
 		// 描画開始
@@ -41,14 +45,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// ゲームシーンの描画
 		gameScene->Draw();
 
-
+		// ImGui描画
 		imguiManager->Draw();
 
 		// 描画終了
 		dxCommon->PostDraw();
 	}
 	delete gameScene;
+	// ゲームシーンの終了処理
 	gameScene = nullptr;
+	// エンジンの終了
 	KamataEngine::Finalize();
 	return 0;
 }
