@@ -23,6 +23,9 @@ Matrix4x4 MakeRotateZMatrix(float radian);
 
 Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3& translate);
 
+/// <summary>
+/// 行列を計算・転送する
+/// </summary>
 void UpdateWorldMatrix(KamataEngine::WorldTransform& worldTransform);
 
 Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t);
@@ -34,6 +37,9 @@ Vector3 operator+=(Vector3& v1, const Vector3& v2);
 bool AABBCollision(const AABB& aabb1, const AABB& aabb2);
 
 Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix);
+
+// ベクトル変換
+Vector3 TransformNormal(const Vector3& v, const Matrix4x4& m);
 
 // EaseIn
 float EaseIn(float start, float end, float t);

@@ -1,10 +1,16 @@
 #pragma once
 #include "KamataEngine.h"
 #include "PlayerBullet.h"
+#include <list>
 #include <stdint.h>
 
 class Player {
 public:
+	/// <summary>
+	/// デストラクタ
+	/// </summary>
+	~Player();
+
 	void Initialize(KamataEngine::Model* model, uint32_t textureHandle, KamataEngine::Camera* camera);
 
 	void Update();
@@ -30,5 +36,5 @@ private:
 	KamataEngine::Input* input_ = nullptr;
 
 	// 弾
-	PlayerBullet* bullet_ = nullptr;
+	std::list<PlayerBullet*> bullets_;
 };

@@ -1,6 +1,8 @@
 #pragma once
+#include "Enemy.h"
 #include "KamataEngine.h"
 #include "Player.h"
+#include <list>
 
 class GameScene {
 public:
@@ -37,4 +39,8 @@ private:
 
 	// デバッグカメラ有効
 	bool isDebugCameraActive_ = false;
+
+	// ★追加
+	// 敵
+	std::list<Enemy*> enemies_;
 };
