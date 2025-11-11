@@ -1,3 +1,5 @@
+// TitleScene.cpp
+
 #include "TitleScene.h"
 #include "KamataEngine.h"
 #include <assert.h>
@@ -7,7 +9,7 @@ using namespace KamataEngine;
 TitleScene::~TitleScene() {
 	delete model_;
 	delete debugCamera_;
-
+	delete fadeSprite_; // スプライトの解放
 }
 
 void TitleScene::Initialize() {
@@ -16,37 +18,119 @@ void TitleScene::Initialize() {
 	worldTransform_.Initialize();
 	camera_.Initialize();
 
-	// Input繧､繝ｳ繧ｹ繧ｿ繝ｳ繧ｹ縺ｮ蜿門ｾ・
+	// Inputインスタンスの取得
 	input_ = Input::GetInstance();
 
-	// 繝・ヰ繝・げ繧ｫ繝｡繝ｩ縺ｮ逕滓・
+	// デバッグカメラの生成
 	debugCamera_ = new DebugCamera(1280, 720);
 
-	// 霆ｸ譁ｹ蜷題｡ｨ遉ｺ縺ｮ陦ｨ遉ｺ繧呈怏蜉ｹ縺ｫ縺吶ｋ
-	AxisIndicator::GetInstance()->SetVisible(true);
-	// 霆ｸ譁ｹ蜷題｡ｨ遉ｺ縺悟盾辣ｧ縺吶ｋ繝薙Η繝ｼ繝励Ο繧ｸ繧ｧ繧ｯ繧ｷ繝ｧ繝ｳ繧呈欠螳壹☆繧・
-	AxisIndicator::GetInstance()->SetTargetCamera(&camera_);
+	// --- フェーズとタイマーの初期化 ---
+	phase_ = ScenePhase::kFadeIn;
+	fadeTimer_ = kFadeDuration_;
 
+	// --- フェード用スプライトの初期化 ---
+	// フェード用のテクスチャ (1x1の白画像)
+	fadeTextureHandle_ = TextureManager::Load("white1x1.png");
+
+	// パラメータをあらかじめ変数に用意
+	Vector2 position = {0.0f, 0.0f};
+	Vector2 size = {1280.0f, 720.0f};         // ★画面サイズ
+	Vector4 color = {0.0f, 0.0f, 0.0f, 1.0f}; // ★初期色は黒
+	Vector2 anchorpoint = {0.0f, 0.0f};
+
+	// size や position を引数に渡すコンストラクタを使用する
+	fadeSprite_ = new Sprite(
+	    fadeTextureHandle_, position,
+	    size, // ★
+	    color, anchorpoint,
+	    false, // isFlipX
+	    false  // isFlipY
+	);
+
+	// ★コンストラクタで設定した後、Initialize() を呼び出す
+	fadeSprite_->Initialize();
+
+	// ★Initialize() の後で、テクスチャ範囲を 1x1 に設定
+	fadeSprite_->SetTextureRect({0.0f, 0.0f}, {1.0f, 1.0f});
 }
 
+// Update() はフェーズの分岐管理のみ
 std::optional<SceneID> TitleScene::Update() {
+	switch (phase_) {
+	case ScenePhase::kFadeIn:
+		return UpdateFadeIn();
+	case ScenePhase::kMain:
+		return UpdateMain();
+	case ScenePhase::kFadeOut:
+		return UpdateFadeOut();
+	}
 
+	return std::nullopt;
+}
+
+void TitleScene::Draw() {
+	KamataEngine::DirectXCommon* dxCommon = KamataEngine::DirectXCommon::GetInstance();
+
+	// --- 3Dモデル描画 ---
+	KamataEngine::Model::PreDraw(dxCommon->GetCommandList());
+	// (ここにタイトルロゴなどのモデル描画処理を追加できます)
+	// model_->Draw(worldTransform_, camera_, textureHandle_);
+	KamataEngine::Model::PostDraw();
+
+
+	// --- フェードの描画処理 ---
+	float alpha = 0.0f;
+	if (phase_ == ScenePhase::kFadeIn) {
+		// FadeIn 中は 1.0 -> 0.0 に変化 (黒いスプライトが消えていく)
+		alpha = (float)fadeTimer_ / (float)kFadeDuration_;
+	} else if (phase_ == ScenePhase::kFadeOut) {
+		// FadeOut 中は 0.0 -> 1.0 に変化 (黒いスプライトが現れていく)
+		alpha = (float)fadeTimer_ / (float)kFadeDuration_;
+	}
+
+	// アルファ値が0より大きい場合のみスプライトを描画
+	if (alpha > 0.0f && fadeSprite_) {
+		// スプライトの描画前処理 (通常ブレンド)
+		Sprite::PreDraw(dxCommon->GetCommandList(), Sprite::BlendMode::kNormal);
+
+		// スプライトの色を設定 (R,G,B = 0 (黒), A = alpha)
+		fadeSprite_->SetColor({0.0f, 0.0f, 0.0f, alpha});
+
+		// スプライト描画
+		fadeSprite_->Draw();
+
+		// スプライトの描画後処理
+		Sprite::PostDraw();
+	}
+}
+
+// FadeIn 中の処理
+std::optional<SceneID> TitleScene::UpdateFadeIn() {
+	// タイマーを減らす
+	fadeTimer_--;
+
+	// タイマーが0になったら Main フェーズに移行
+	if (fadeTimer_ <= 0) {
+		phase_ = ScenePhase::kMain;
+	}
+
+	// このフェーズ中はシーンを切り替えない
+	return std::nullopt;
+}
+
+// Main 中の処理
+std::optional<SceneID> TitleScene::UpdateMain() {
 #ifdef _DEBUG
-
 	if (input_->TriggerKey(DIK_0)) {
 		isDebugCameraActive_ = !isDebugCameraActive_;
 	}
-
-	// デバッグカメラの状態表示
 	if (isDebugCameraActive_) {
 		ImGui::Begin("Debug Camera");
 		ImGui::Text("Debug Camera: ON");
 		ImGui::End();
 	}
-
 #endif
 
-	// カメラの更新
 	if (isDebugCameraActive_) {
 		debugCamera_->Update();
 		camera_.matView = debugCamera_->GetCamera().matView;
@@ -56,20 +140,28 @@ std::optional<SceneID> TitleScene::Update() {
 		camera_.UpdateMatrix();
 		camera_.TransferMatrix();
 	}
-	return std::nullopt; // 戻り値漏れ防止
+
+	// ★スペースキーが押されたら FadeOut フェーズに移行
+	if (input_->TriggerKey(DIK_SPACE)) {
+		phase_ = ScenePhase::kFadeOut;
+		fadeTimer_ = 0; // FadeOut用にタイマーリセット
+	}
+
+	// このフェーズ中はシーンを切り替えない
+	return std::nullopt;
 }
 
-void TitleScene::Draw() {
+// FadeOut 中の処理
+std::optional<SceneID> TitleScene::UpdateFadeOut() {
+	// タイマーを増やす
+	fadeTimer_++;
 
-	KamataEngine::DirectXCommon* dxCommon = KamataEngine::DirectXCommon::GetInstance();
+	// タイマーが指定時間に達したら
+	if (fadeTimer_ >= kFadeDuration_) {
+		// 次のシーン (kGame) を返す
+		return SceneID::kGame;
+	}
 
-	// 繝｢繝・Ν縺ｮ謠冗判貅門ｙ
-	KamataEngine::Model::PreDraw(dxCommon->GetCommandList());
-
-
-	// 繝｢繝・Ν縺ｮ謠冗判邨ゆｺ・
-	KamataEngine::Model::PostDraw();
-
-	// 霆ｸ譁ｹ蜷題｡ｨ遉ｺ縺ｮ謠冗判
-	AxisIndicator::GetInstance()->Draw();
+	// このフェーズ中はシーンを切り替えない
+	return std::nullopt;
 }

@@ -1,3 +1,4 @@
+// GameScene.h
 #pragma once
 #include "Enemy.h"
 #include "IScene.h"
@@ -27,8 +28,11 @@ private:
 private:
 	uint32_t textureHandle_ = 0;
 
+	// --- ★ここから修正 ---
 	// 3Dモデルデータ
-	KamataEngine::Model* model_ = nullptr;
+	KamataEngine::Model* playerModel_ = nullptr;
+	KamataEngine::Model* enemyModel_ = nullptr;
+	// --- ★ここまで修正 ---
 
 	// カメラ
 	KamataEngine::Camera camera_;
@@ -49,4 +53,9 @@ private:
 
 	// 敵
 	std::list<Enemy*> enemies_;
+
+	// フェード用スプライト
+	KamataEngine::Sprite* fadeSprite_ = nullptr;
+	// フェード用テクスチャハンドル (1x1の白画像で代用)
+	uint32_t fadeTextureHandle_ = 0;
 };

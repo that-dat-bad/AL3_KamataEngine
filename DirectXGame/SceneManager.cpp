@@ -1,7 +1,7 @@
 #include "SceneManager.h"
 #include "GameScene.h"
 #include "TitleScene.h"
-// #include "ResultScene.h"
+#include "ResultScene.h"
 #include <optional>
 
 SceneManager::SceneManager() {}
@@ -14,8 +14,7 @@ SceneManager::~SceneManager() {
 }
 
 void SceneManager::Initialize() {
-	// 最初のシーンを GameScene にする
-	currentScene_ = new GameScene();
+	currentScene_ = new TitleScene();
 	currentScene_->Initialize();
 	currentSceneID_ = SceneID::kTitle;
 }
@@ -32,7 +31,6 @@ void SceneManager::Update() {
 
 	if (nextSceneID) {
 
-		// 1. 古いシーンを解放する
 		if (currentScene_) {
 			delete currentScene_;
 			currentScene_ = nullptr;
@@ -48,7 +46,7 @@ void SceneManager::Update() {
 			currentScene_ = new GameScene();
 			break;
 		case SceneID::kResult:
-			// currentScene_ = new ResultScene();
+			currentScene_ = new ResultScene();
 			break;
 		}
 

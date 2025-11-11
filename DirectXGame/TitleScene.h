@@ -1,7 +1,10 @@
+// TitleScene.h
 #pragma once
 #include "IScene.h"
 #include "KamataEngine.h"
+
 #include <list>
+
 class TitleScene : public IScene {
 public:
 	~TitleScene();
@@ -35,8 +38,15 @@ private:
 	// デバッグカメラ有効
 	bool isDebugCameraActive_ = false;
 
-	//フェーズ別更新処理
+	// フェーズ別更新処理
 	std::optional<SceneID> UpdateFadeIn();
 	std::optional<SceneID> UpdateMain();
 	std::optional<SceneID> UpdateFadeOut();
+
+	// --- ★以下を追加 ---
+	// フェード用スプライト
+	KamataEngine::Sprite* fadeSprite_ = nullptr;
+	// フェード用テクスチャハンドル (1x1の白画像で代用)
+	uint32_t fadeTextureHandle_ = 0;
+	// --- ★追加ここまで ---
 };

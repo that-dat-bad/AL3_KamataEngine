@@ -49,5 +49,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// エンジンの終了
 	KamataEngine::Finalize();
+	delete sceneManager;
 	return 0;
 }

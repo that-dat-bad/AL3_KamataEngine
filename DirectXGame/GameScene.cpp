@@ -1,7 +1,6 @@
 #include "GameScene.h"
 #include "Enemy.h"
 #include "IScene.h"
-
 #include "KamataEngine.h"
 #include "Player.h"
 #include <assert.h>
@@ -9,21 +8,32 @@
 using namespace KamataEngine;
 
 GameScene::~GameScene() {
-	delete model_;
+	delete playerModel_;
+	delete enemyModel_;
 	delete player_;
 	delete debugCamera_;
 	for (Enemy* enemy : enemies_) {
 		delete enemy;
 	}
+	delete fadeSprite_; // スプライトの解放
 }
 
 void GameScene::Initialize() {
 	textureHandle_ = TextureManager::Load("UVChecker.png");
-	model_ = Model::Create();
+	playerModel_ = Model::CreateFromOBJ("Resources/player.obj");
+	enemyModel_ = Model::CreateFromOBJ("Resources/enemy.obj");
+
+
 	worldTransform_.Initialize();
 	camera_.Initialize();
+
+	// --- カメラの位置を調整 ---
+	camera_.translation_ = {0.0f, 2.5f, -15.0f};
+	// ---
+
 	player_ = new Player();
-	player_->Initialize(model_, textureHandle_, &camera_);
+	// ★プレイヤーモデルを渡す
+	player_->Initialize(playerModel_, textureHandle_, &camera_);
 
 	// Inputインスタンスの取得
 	input_ = Input::GetInstance();
@@ -31,19 +41,26 @@ void GameScene::Initialize() {
 	// デバッグカメラの生成
 	debugCamera_ = new DebugCamera(1280, 720);
 
-	// 軸方向表示の表示を有効にする
-	AxisIndicator::GetInstance()->SetVisible(true);
-	// 軸方向表示が参照するビュープロジェクションを指定する
-	AxisIndicator::GetInstance()->SetTargetCamera(&camera_);
 
 	// 敵の生成
 	Enemy* newEnemy = new Enemy();
-	newEnemy->Initialize(model_, {0, 0, 50.0f});
+	// ★敵モデルを渡す
+	newEnemy->Initialize(enemyModel_, {0, 0, 50.0f});
 	enemies_.push_back(newEnemy);
 
 	// フェーズとタイマーの初期化
 	phase_ = ScenePhase::kFadeIn;
 	fadeTimer_ = kFadeDuration_;
+
+	// --- フェード用スプライトの初期化 ---
+	fadeTextureHandle_ = TextureManager::Load("white1x1.png");
+	Vector2 position = {0.0f, 0.0f};
+	Vector2 size = {1280.0f, 720.0f};
+	Vector4 color = {0.0f, 0.0f, 0.0f, 1.0f};
+	Vector2 anchorpoint = {0.0f, 0.0f};
+	fadeSprite_ = new Sprite(fadeTextureHandle_, position, size, color, anchorpoint, false, false);
+	fadeSprite_->Initialize();
+	fadeSprite_->SetTextureRect({0.0f, 0.0f}, {1.0f, 1.0f});
 }
 
 // Update() はフェーズの分岐管理のみ
@@ -56,7 +73,6 @@ std::optional<SceneID> GameScene::Update() {
 	case ScenePhase::kFadeOut:
 		return UpdateFadeOut();
 	}
-
 	return std::nullopt;
 }
 
@@ -74,9 +90,8 @@ std::optional<SceneID> GameScene::UpdateFadeIn() {
 	return std::nullopt;
 }
 
-// Main 中の処理 (以前の Update() の中身)
+// Main 中の処理
 std::optional<SceneID> GameScene::UpdateMain() {
-	// --- (ここから) 以前の GameScene::Update() の中身 ---
 	player_->Update();
 
 	enemies_.remove_if([](Enemy* enemy) {
@@ -111,16 +126,11 @@ std::optional<SceneID> GameScene::UpdateMain() {
 		camera_.UpdateMatrix();
 		camera_.TransferMatrix();
 	}
-	// --- (ここまで) 以前の GameScene::Update() の中身 ---
 
-	// 仮: シーンを終了する条件 (例: Enterキーが押されたら)
 	if (input_->TriggerKey(DIK_RETURN)) {
-		// FadeOut フェーズに移行
 		phase_ = ScenePhase::kFadeOut;
-		fadeTimer_ = 0; // FadeOut用にタイマーリセット
+		fadeTimer_ = 0;
 	}
-
-	// このフェーズ中はシーンを切り替えない
 	return std::nullopt;
 }
 
@@ -131,28 +141,26 @@ std::optional<SceneID> GameScene::UpdateFadeOut() {
 
 	// タイマーが指定時間に達したら
 	if (fadeTimer_ >= kFadeDuration_) {
-		// 次のシーン (例: kResult) を返す
 		return SceneID::kResult;
 	}
-
-	// このフェーズ中はシーンを切り替えない
 	return std::nullopt;
 }
 
 void GameScene::Draw() {
-	// 3Dオブジェクト描画処理
 	KamataEngine::DirectXCommon* dxCommon = KamataEngine::DirectXCommon::GetInstance();
-	KamataEngine::Model::PreDraw(dxCommon->GetCommandList());
-	player_->Draw();
-	for (Enemy* enemy : enemies_) {
-		enemy->Draw(camera_);
+
+	// 3Dオブジェクト描画処理
+	// フェードイン中は3Dモデルを描画しない
+	if (phase_ != ScenePhase::kFadeIn) {
+		KamataEngine::Model::PreDraw(dxCommon->GetCommandList());
+		player_->Draw();
+		for (Enemy* enemy : enemies_) {
+			enemy->Draw(camera_);
+		}
+		KamataEngine::Model::PostDraw();
 	}
-	KamataEngine::Model::PostDraw();
-	AxisIndicator::GetInstance()->Draw();
 
 	// --- フェードの描画処理 ---
-	// (KamataEngineに2Dスプライト描画機能がある前提)
-
 	float alpha = 0.0f;
 	if (phase_ == ScenePhase::kFadeIn) {
 		// FadeIn 中は 1.0 -> 0.0 に変化
@@ -162,8 +170,18 @@ void GameScene::Draw() {
 		alpha = (float)fadeTimer_ / (float)kFadeDuration_;
 	}
 
-	// (アルファ付きで黒いスプライトを全画面に描画する処理をここに書く)
-	// if (alpha > 0.0f) {
-	// 	 sprite->Draw(blackTexture, {0,0}, {1280, 720}, {1,1,1, alpha});
-	// }
+	// アルファ値が0より大きい場合のみスプライトを描画
+	if (alpha > 0.0f && fadeSprite_) {
+		// スプライトの描画前処理 (通常ブレンド)
+		Sprite::PreDraw(dxCommon->GetCommandList(), Sprite::BlendMode::kNormal);
+
+		// スプライトの色を設定 (R,G,B = 0 (黒), A = alpha)
+		fadeSprite_->SetColor({0.0f, 0.0f, 0.0f, alpha});
+
+		// スプライト描画
+		fadeSprite_->Draw();
+
+		// スプライトの描画後処理
+		Sprite::PostDraw();
+	}
 }
