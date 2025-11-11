@@ -1,14 +1,10 @@
 #pragma once
-#include "Enemy.h"
 #include "IScene.h"
 #include "KamataEngine.h"
-#include "Player.h"
 #include <list>
-#include <optional>
-
-class GameScene : public IScene {
+class TitleScene : public IScene {
 public:
-	~GameScene() override;
+	~TitleScene();
 
 	// 初期化
 	void Initialize() override;
@@ -20,11 +16,6 @@ public:
 	void Draw() override;
 
 private:
-	std::optional<SceneID> UpdateFadeIn();
-	std::optional<SceneID> UpdateMain();
-	std::optional<SceneID> UpdateFadeOut();
-
-private:
 	uint32_t textureHandle_ = 0;
 
 	// 3Dモデルデータ
@@ -32,9 +23,6 @@ private:
 
 	// カメラ
 	KamataEngine::Camera camera_;
-
-	// 自キャラ
-	Player* player_ = nullptr;
 
 	KamataEngine::WorldTransform worldTransform_;
 
@@ -47,6 +35,7 @@ private:
 	// デバッグカメラ有効
 	bool isDebugCameraActive_ = false;
 
-	// 敵
-	std::list<Enemy*> enemies_;
+	std::optional<SceneID> UpdateFadeIn();
+	std::optional<SceneID> UpdateMain();
+	std::optional<SceneID> UpdateFadeOut();
 };
