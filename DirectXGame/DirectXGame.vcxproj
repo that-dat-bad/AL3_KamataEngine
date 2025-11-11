@@ -109,7 +109,6 @@
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="EnemyBullet.cpp" />
     <ClCompile Include="GameScene.cpp" />
-    <ClCompile Include="IScene.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mathStruct.cpp" />
     <ClCompile Include="Player.cpp" />

@@ -35,6 +35,7 @@ private:
 	// デバッグカメラ有効
 	bool isDebugCameraActive_ = false;
 
+	//フェーズ別更新処理
 	std::optional<SceneID> UpdateFadeIn();
 	std::optional<SceneID> UpdateMain();
 	std::optional<SceneID> UpdateFadeOut();

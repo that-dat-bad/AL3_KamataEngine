@@ -17,7 +17,7 @@ void SceneManager::Initialize() {
 	// 最初のシーンを GameScene にする
 	currentScene_ = new GameScene();
 	currentScene_->Initialize();
-	currentSceneID_ = SceneID::kGame;
+	currentSceneID_ = SceneID::kTitle;
 }
 
 // 毎フレーム呼ばれる更新処理
