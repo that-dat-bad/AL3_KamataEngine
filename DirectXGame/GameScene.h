@@ -28,11 +28,10 @@ private:
 private:
 	uint32_t textureHandle_ = 0;
 
-	// --- ★ここから修正 ---
 	// 3Dモデルデータ
 	KamataEngine::Model* playerModel_ = nullptr;
 	KamataEngine::Model* enemyModel_ = nullptr;
-	// --- ★ここまで修正 ---
+
 
 	// カメラ
 	KamataEngine::Camera camera_;

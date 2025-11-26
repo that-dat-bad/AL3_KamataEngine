@@ -14,9 +14,13 @@ SceneManager::~SceneManager() {
 }
 
 void SceneManager::Initialize() {
-	currentScene_ = new TitleScene();
+	currentScene_ = new GameScene();
 	currentScene_->Initialize();
 	currentSceneID_ = SceneID::kTitle;
+
+	#ifdef _DEBUG
+	currentSceneID_ = SceneID::kGame;
+#endif // _DEBUG
 }
 
 // 毎フレーム呼ばれる更新処理

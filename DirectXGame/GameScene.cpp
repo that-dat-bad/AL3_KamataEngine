@@ -19,9 +19,9 @@ GameScene::~GameScene() {
 }
 
 void GameScene::Initialize() {
-	textureHandle_ = TextureManager::Load("UVChecker.png");
-	playerModel_ = Model::CreateFromOBJ("Resources/player.obj");
-	enemyModel_ = Model::CreateFromOBJ("Resources/enemy.obj");
+	//textureHandle_ = TextureManager::Load("UVChecker.png");
+	playerModel_ = Model::CreateFromOBJ("player");
+	enemyModel_ = Model::CreateFromOBJ("enemy");
 
 
 	worldTransform_.Initialize();
