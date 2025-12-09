@@ -1,20 +1,25 @@
 #include "TitleScene.h"
 #include "KamataEngine.h"
 #include <assert.h>
+#include"mathStruct.h"
 
 using namespace KamataEngine;
 
 TitleScene::~TitleScene() {
-	delete model_;
 	delete debugCamera_;
 	delete fadeSprite_;
 	delete logo_;
-	delete guideModel_;
+	delete guide_;
+	delete skydomeModel_;
 }
 
 void TitleScene::Initialize() {
-	textureHandle_ = TextureManager::Load("UVChecker.png");
-	model_ = Model::Create();
+
+	skydomeModel_ = Model::CreateFromOBJ("titleSkydome");
+
+	skydomeTransform_.Initialize();
+	skydomeTransform_.matWorld_ = MakeAffineMatrix(skydomeTransform_.scale_, skydomeTransform_.rotation_, skydomeTransform_.translation_);
+	skydomeTransform_.TransferMatrix();
 	worldTransform_.Initialize();
 	camera_.Initialize();
 
@@ -34,12 +39,12 @@ void TitleScene::Initialize() {
 	//---3Dモデルの初期化---
 	//タイトルロゴ
 	logo_ = new TitleLogo();
-	logo_->Initialize(Model::CreateFromOBJ("title"), &camera_, {0.0f, 0.0f, -45.0f});
-
+	logo_->Initialize(Model::CreateFromOBJ("title"), &camera_, logoPosition_);
+	logo_->SetPosition(logoPosition_);
 	// 誘導
-	guideModel_ = Model::CreateFromOBJ("pressSpace");
-	guideWorldTransform_.Initialize();
-	guideWorldTransform_.translation_ = {0.0f, -2.0f, 5.0f};
+	guide_ = new TitleGuide();
+	guide_->Initialize(Model::CreateFromOBJ("pressSpace"), &camera_, guidePosition_);
+	guide_->SetPosition(guidePosition_);
 
 	// パラメータをあらかじめ変数に用意
 	Vector2 position = {0.0f, 0.0f};
@@ -65,16 +70,39 @@ void TitleScene::Initialize() {
 
 // Update() はフェーズの分岐管理のみ
 std::optional<SceneID> TitleScene::Update() {
+	// 1. 結果を受け取る変数を用意 (初期値は nullopt)
+	std::optional<SceneID> result = std::nullopt;
+
+	// 2. フェーズごとの処理を実行し、結果を代入する (returnはしない！)
 	switch (phase_) {
 	case ScenePhase::kFadeIn:
-		return UpdateFadeIn();
+		result = UpdateFadeIn();
+		break;
 	case ScenePhase::kMain:
-		return UpdateMain();
+		result = UpdateMain();
+		break;
 	case ScenePhase::kFadeOut:
-		return UpdateFadeOut();
+		result = UpdateFadeOut();
+		break;
 	}
 
-	return std::nullopt;
+	// 3. 共通の更新処理 (ここが全フェーズで実行されるようになる！)
+
+	// ImGuiなどで変えた位置を常に適用し続ける
+	logo_->SetPosition(logoPosition_);
+	logo_->Update();
+	guide_->SetPosition(guidePosition_);
+	guide_->Update();
+
+	// カメラの更新
+	// 一旦フェード中のズレを直すには最低限これを有効にする必要があります。
+	if (!isDebugCameraActive_) {
+		camera_.UpdateMatrix();
+		camera_.TransferMatrix();
+	}
+
+	// 4. 最後に結果を返す
+	return result;
 }
 
 void TitleScene::Draw() {
@@ -85,7 +113,8 @@ void TitleScene::Draw() {
 	// (ここにタイトルロゴなどのモデル描画処理を追加できます)
 	// model_->Draw(worldTransform_, camera_, textureHandle_);
 	logo_->Draw();
-	guideModel_->Draw(guideWorldTransform_, camera_);
+	guide_->Draw();
+	skydomeModel_->Draw(skydomeTransform_, camera_);
 	KamataEngine::Model::PostDraw();
 
 	// --- フェードの描画処理 ---
@@ -139,8 +168,15 @@ std::optional<SceneID> TitleScene::UpdateMain() {
 		ImGui::Text("Debug Camera: ON");
 		ImGui::End();
 	}
+	ImGui::Begin("Title Adjustment");
+	ImGui::DragFloat3("Logo Position", &logoPosition_.x, 0.1f);
+	ImGui::End();
+
+
 #endif
 
+	logo_->Update();
+	guide_->Update();
 	if (isDebugCameraActive_) {
 		debugCamera_->Update();
 		camera_.matView = debugCamera_->GetCamera().matView;

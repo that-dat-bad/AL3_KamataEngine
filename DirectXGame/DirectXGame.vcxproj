@@ -115,6 +115,7 @@
     <ClCompile Include="PlayerBullet.cpp" />
     <ClCompile Include="ResultScene.cpp" />
     <ClCompile Include="SceneManager.cpp" />
+    <ClCompile Include="TitleGuide.cpp" />
     <ClCompile Include="TitleLogo.cpp" />
     <ClCompile Include="TitleScene.cpp" />
   </ItemGroup>
@@ -203,6 +204,7 @@
     <ClInclude Include="PlayerBullet.h" />
     <ClInclude Include="ResultScene.h" />
     <ClInclude Include="SceneManager.h" />
+    <ClInclude Include="TitleGuide.h" />
     <ClInclude Include="TitleLogo.h" />
     <ClInclude Include="TitleScene.h" />
   </ItemGroup>

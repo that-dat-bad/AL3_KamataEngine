@@ -2,6 +2,7 @@
 #include "IScene.h"
 #include "KamataEngine.h"
 #include "TitleLogo.h"
+#include"TitleGuide.h"
 #include <list>
 
 class TitleScene : public IScene {
@@ -49,7 +50,12 @@ private:
 
 	//タイトルロゴの3Dモデル
 	TitleLogo* logo_ = nullptr;
+	KamataEngine::Vector3 logoPosition_ = {0.0f, 0.0f, -45.0f};
 	// 誘導の3Dモデル
-	KamataEngine::Model* guideModel_ = nullptr;
-	KamataEngine::WorldTransform guideWorldTransform_;
+	TitleGuide* guide_ = nullptr;
+	KamataEngine::Vector3 guidePosition_ = {-1.0f, -2.0f, -40.0f};
+
+	//天球
+	KamataEngine::Model* skydomeModel_ = nullptr;
+	KamataEngine::WorldTransform skydomeTransform_;
 };

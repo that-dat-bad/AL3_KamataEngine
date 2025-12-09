@@ -17,13 +17,12 @@ void TitleLogo::Initialize(KamataEngine::Model* model, KamataEngine::Camera* cam
 	// ワールドトランスフォームの初期化
 	worldTransform_.Initialize();
 	worldTransform_.translation_ = position;
-	worldTransform_.scale_ = {3.0f, 3.0f, 3.0f};
 }
 
 void TitleLogo::Update() {
-	worldTransform_.translation_.y = sinf(theta_) * amplitude_;
-	theta_ += static_cast<float>(M_PI) / 60.0f;
-	worldTransform_.translation_.y += 2.0f;
+	//worldTransform_.translation_.y = sinf(theta_) * amplitude_;
+	//theta_ += static_cast<float>(M_PI) / 60.0f;
+	//worldTransform_.translation_.y += 2.0f;
 
 	// 行列を定数バッファに移動
 	worldTransform_.matWorld_ = MakeAffineMatrix(worldTransform_.scale_, worldTransform_.rotation_, worldTransform_.translation_);
