@@ -1,25 +1,23 @@
 #include "TitleScene.h"
 #include "KamataEngine.h"
 #include <assert.h>
-#include"mathStruct.h"
+#include <cmath>
+#include "mathStruct.h"
 
 using namespace KamataEngine;
 
 TitleScene::~TitleScene() {
+	delete model_;
 	delete debugCamera_;
 	delete fadeSprite_;
 	delete logo_;
-	delete guide_;
 	delete skydomeModel_;
+	delete pressSpaceSprite_;
 }
 
 void TitleScene::Initialize() {
-
-	skydomeModel_ = Model::CreateFromOBJ("titleSkydome");
-
-	skydomeTransform_.Initialize();
-	skydomeTransform_.matWorld_ = MakeAffineMatrix(skydomeTransform_.scale_, skydomeTransform_.rotation_, skydomeTransform_.translation_);
-	skydomeTransform_.TransferMatrix();
+	textureHandle_ = TextureManager::Load("UVChecker.png");
+	model_ = Model::Create();
 	worldTransform_.Initialize();
 	camera_.Initialize();
 
@@ -36,44 +34,46 @@ void TitleScene::Initialize() {
 	// --- フェード用スプライトの初期化 ---
 	fadeTextureHandle_ = TextureManager::Load("white1x1.png");
 
-	//---3Dモデルの初期化---
-	//タイトルロゴ
+	// --- 3Dモデル (タイトルロゴ) の初期化 ---
 	logo_ = new TitleLogo();
 	logo_->Initialize(Model::CreateFromOBJ("title"), &camera_, logoPosition_);
 	logo_->SetPosition(logoPosition_);
-	// 誘導
-	guide_ = new TitleGuide();
-	guide_->Initialize(Model::CreateFromOBJ("pressSpace"), &camera_, guidePosition_);
-	guide_->SetPosition(guidePosition_);
 
-	// パラメータをあらかじめ変数に用意
+	// --- 背景 (天球) の初期化 ---
+	// "skydome" はBlenderから出したobjファイル名に合わせてください
+	skydomeModel_ = Model::CreateFromOBJ("titleSkydome");
+	skydomeTransform_.Initialize();
+	// 行列更新
+	skydomeTransform_.matWorld_ = MakeAffineMatrix(skydomeTransform_.scale_, skydomeTransform_.rotation_, skydomeTransform_.translation_);
+	skydomeTransform_.TransferMatrix();
+
+	// --- 誘導表示 (Press Space スプライト) の初期化 ---
+	// 画像読み込み (ファイル名は実際の画像に合わせてください)
+	pressSpaceTexture_ = TextureManager::Load("./Resources/pressSpace.png");
+
+	// スプライト生成
+	// 画面中央下 (x=640, y=550) あたりに配置
+	// サイズ {300, 60} は画像の大きさに合わせて調整してください
+	pressSpaceSprite_ = new Sprite(
+	    pressSpaceTexture_, {640.0f, 550.0f}, {1280.0f, 130.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.5f, 0.5f}, // アンカーポイントを中央に
+	    false, false);
+	pressSpaceSprite_->Initialize();
+	blinkTimer_ = 0.0f;
+
+	// --- フェードスプライト設定 ---
 	Vector2 position = {0.0f, 0.0f};
 	Vector2 size = {1280.0f, 720.0f};
 	Vector4 color = {0.0f, 0.0f, 0.0f, 1.0f};
 	Vector2 anchorpoint = {0.0f, 0.0f};
 
-	// size や position を引数に渡すコンストラクタを使用する
-	fadeSprite_ = new Sprite(
-	    fadeTextureHandle_, position,
-	    size, 
-	    color, anchorpoint,
-	    false, // isFlipX
-	    false  // isFlipY
-	);
-
-	// ★コンストラクタで設定した後、Initialize() を呼び出す
+	fadeSprite_ = new Sprite(fadeTextureHandle_, position, size, color, anchorpoint, false, false);
 	fadeSprite_->Initialize();
-
-	// ★Initialize() の後で、テクスチャ範囲を 1x1 に設定
 	fadeSprite_->SetTextureRect({0.0f, 0.0f}, {1.0f, 1.0f});
 }
 
-// Update() はフェーズの分岐管理のみ
 std::optional<SceneID> TitleScene::Update() {
-	// 1. 結果を受け取る変数を用意 (初期値は nullopt)
 	std::optional<SceneID> result = std::nullopt;
 
-	// 2. フェーズごとの処理を実行し、結果を代入する (returnはしない！)
 	switch (phase_) {
 	case ScenePhase::kFadeIn:
 		result = UpdateFadeIn();
@@ -86,78 +86,71 @@ std::optional<SceneID> TitleScene::Update() {
 		break;
 	}
 
-	// 3. 共通の更新処理 (ここが全フェーズで実行されるようになる！)
-
-	// ImGuiなどで変えた位置を常に適用し続ける
+	// --- 共通更新 ---
 	logo_->SetPosition(logoPosition_);
 	logo_->Update();
-	guide_->SetPosition(guidePosition_);
-	guide_->Update();
 
 	// カメラの更新
-	// 一旦フェード中のズレを直すには最低限これを有効にする必要があります。
 	if (!isDebugCameraActive_) {
 		camera_.UpdateMatrix();
 		camera_.TransferMatrix();
 	}
 
-	// 4. 最後に結果を返す
 	return result;
 }
 
 void TitleScene::Draw() {
 	KamataEngine::DirectXCommon* dxCommon = KamataEngine::DirectXCommon::GetInstance();
 
-	// --- 3Dモデル描画 ---
+	// ==========================================
+	// 3Dモデル描画フェーズ
+	// ==========================================
 	KamataEngine::Model::PreDraw(dxCommon->GetCommandList());
-	// (ここにタイトルロゴなどのモデル描画処理を追加できます)
-	// model_->Draw(worldTransform_, camera_, textureHandle_);
-	logo_->Draw();
-	guide_->Draw();
+
+	// 1. 背景 (天球)
+	// 色を強制的に黒にし、ライトの影響を切る
+
 	skydomeModel_->Draw(skydomeTransform_, camera_);
+
+	// 2. タイトルロゴ
+	logo_->Draw();
+
 	KamataEngine::Model::PostDraw();
 
-	// --- フェードの描画処理 ---
+	// ==========================================
+	// スプライト描画フェーズ (2D)
+	// ==========================================
+	KamataEngine::Sprite::PreDraw(dxCommon->GetCommandList(), KamataEngine::Sprite::BlendMode::kNormal);
+
+	// 1. Press Space 誘導表示
+	if (pressSpaceSprite_) {
+		pressSpaceSprite_->Draw();
+	}
+
+	// 2. フェード用黒画像 (最前面)
 	float alpha = 0.0f;
 	if (phase_ == ScenePhase::kFadeIn) {
-		// FadeIn 中は 1.0 -> 0.0 に変化 (黒いスプライトが消えていく)
 		alpha = (float)fadeTimer_ / (float)kFadeDuration_;
 	} else if (phase_ == ScenePhase::kFadeOut) {
-		// FadeOut 中は 0.0 -> 1.0 に変化 (黒いスプライトが現れていく)
 		alpha = (float)fadeTimer_ / (float)kFadeDuration_;
 	}
 
-	// アルファ値が0より大きい場合のみスプライトを描画
 	if (alpha > 0.0f && fadeSprite_) {
-		// スプライトの描画前処理 (通常ブレンド)
-		Sprite::PreDraw(dxCommon->GetCommandList(), Sprite::BlendMode::kNormal);
-
-		// スプライトの色を設定 (R,G,B = 0 (黒), A = alpha)
 		fadeSprite_->SetColor({0.0f, 0.0f, 0.0f, alpha});
-
-		// スプライト描画
 		fadeSprite_->Draw();
-
-		// スプライトの描画後処理
-		Sprite::PostDraw();
 	}
+
+	KamataEngine::Sprite::PostDraw();
 }
 
-// FadeIn 中の処理
 std::optional<SceneID> TitleScene::UpdateFadeIn() {
-	// タイマーを減らす
 	fadeTimer_--;
-
-	// タイマーが0になったら Main フェーズに移行
 	if (fadeTimer_ <= 0) {
 		phase_ = ScenePhase::kMain;
 	}
-
-	// このフェーズ中はシーンを切り替えない
 	return std::nullopt;
 }
 
-// Main 中の処理
 std::optional<SceneID> TitleScene::UpdateMain() {
 #ifdef _DEBUG
 	if (input_->TriggerKey(DIK_0)) {
@@ -171,12 +164,8 @@ std::optional<SceneID> TitleScene::UpdateMain() {
 	ImGui::Begin("Title Adjustment");
 	ImGui::DragFloat3("Logo Position", &logoPosition_.x, 0.1f);
 	ImGui::End();
-
-
 #endif
 
-	logo_->Update();
-	guide_->Update();
 	if (isDebugCameraActive_) {
 		debugCamera_->Update();
 		camera_.matView = debugCamera_->GetCamera().matView;
@@ -187,27 +176,25 @@ std::optional<SceneID> TitleScene::UpdateMain() {
 		camera_.TransferMatrix();
 	}
 
-	// ★スペースキーが押されたら FadeOut フェーズに移行
+	// --- スプライトの点滅処理 ---
+	blinkTimer_ += 0.1f; // 点滅スピード
+	// サイン波でアルファ値を 0.0 ～ 1.0 にする
+	float textAlpha = (std::sin(blinkTimer_) + 1.0f) / 2.0f;
+	pressSpaceSprite_->SetColor({1.0f, 1.0f, 1.0f, textAlpha});
+
+	// スペースキーで次へ
 	if (input_->TriggerKey(DIK_SPACE)) {
 		phase_ = ScenePhase::kFadeOut;
-		fadeTimer_ = 0; // FadeOut用にタイマーリセット
+		fadeTimer_ = 0;
 	}
 
-	// このフェーズ中はシーンを切り替えない
 	return std::nullopt;
 }
 
-// FadeOut 中の処理
 std::optional<SceneID> TitleScene::UpdateFadeOut() {
-	// タイマーを増やす
 	fadeTimer_++;
-
-	// タイマーが指定時間に達したら
 	if (fadeTimer_ >= kFadeDuration_) {
-		// 次のシーン (kGame) を返す
 		return SceneID::kGame;
 	}
-
-	// このフェーズ中はシーンを切り替えない
 	return std::nullopt;
 }
