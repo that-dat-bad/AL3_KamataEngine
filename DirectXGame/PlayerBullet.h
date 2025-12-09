@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 /// <summary>
-/// 自キャラの弾
+/// プレイヤーの弾
 /// </summary>
 class PlayerBullet {
 public:
@@ -26,8 +26,20 @@ public:
 	/// <param name="camera">カメラ</param>
 	void Draw(const KamataEngine::Camera& camera);
 
-
+	/// <summary>
+	/// 死亡フラグを取得
+	/// </summary>
 	bool IsDead() const { return isDead_; }
+
+	/// <summary>
+	/// 衝突したときの処理
+	/// </summary>
+	void OnCollision();
+
+	/// <summary>
+	/// ワールド座標を取得
+	/// </summary>
+	KamataEngine::Vector3 GetWorldPosition() const;
 
 private:
 	// ワールド変換データ
@@ -40,7 +52,7 @@ private:
 	// 速度
 	KamataEngine::Vector3 velocity_;
 
-	// 寿命
+	// 寿命<frm>
 	static const int32_t kLifeTime = 60 * 5;
 	// デスタイマー
 	int32_t deathTimer_ = kLifeTime;

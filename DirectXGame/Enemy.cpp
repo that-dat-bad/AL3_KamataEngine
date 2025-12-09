@@ -1,12 +1,13 @@
 #include "Enemy.h"
+#include "Player.h"
 #include "mathStruct.h"
 #include <DirectXMath.h>
 #include <cassert>
+#include <cmath>
 
 using namespace KamataEngine;
 
 Enemy::~Enemy() {
-	// 弾リストの解放
 	for (EnemyBullet* bullet : bullets_) {
 		delete bullet;
 	}
@@ -16,19 +17,17 @@ void Enemy::Initialize(Model* model, const KamataEngine::Vector3& position) {
 	assert(model);
 	model_ = model;
 
-
 	worldTransform_.Initialize();
 	worldTransform_.translation_ = position;
 
-	// 初期ステート（フェーズ）をメンバ関数ポインタで設定
-	stateFunction_ = &Enemy::UpdateApproach;
 
+
+	stateFunction_ = &Enemy::UpdateApproach;
 
 	Fire();
 }
 
 void Enemy::Update() {
-	// 弾の更新・削除処理
 	bullets_.remove_if([](EnemyBullet* bullet) {
 		if (bullet->IsDead()) {
 			delete bullet;
@@ -41,65 +40,63 @@ void Enemy::Update() {
 		bullet->Update();
 	}
 
-	// 現在のステートが指す関数を呼び出す
 	(this->*stateFunction_)();
 
-	// 画面外に行ったらデスフラグ
 	if (worldTransform_.translation_.z < -10.0f || worldTransform_.translation_.z > 60.0f) {
 		isDead_ = true;
 	}
 
-	// ワールドトランスフォームの更新
 	UpdateWorldMatrix(worldTransform_);
 }
 
 void Enemy::Draw(const Camera& camera) {
-	// 敵本体の描画
 	model_->Draw(worldTransform_, camera);
-
-	// 弾の描画
 	for (EnemyBullet* bullet : bullets_) {
 		bullet->Draw(camera);
 	}
 }
 
 void Enemy::UpdateApproach() {
-	// 接近フェーズの速度
-	const Vector3 velocityApproach = {0, 0, -0.2f};
+	// ★修正: プレイヤー追尾をやめて、まっすぐ手前に進む
+	const float kSpeed = 0.2f;
+	worldTransform_.translation_.z -= kSpeed;
 
-	// 移動
-	worldTransform_.translation_ += velocityApproach;
-
-	// 規定の位置(Z=0)に到達したら離脱
+	// 規定の位置（例えばZ=0）まで来たら離脱フェーズへ
+	// もしプレイヤーとの距離で判定したい場合はここを調整します
 	if (worldTransform_.translation_.z < 0.0f) {
-		// ステートを離脱フェーズに変更
 		stateFunction_ = &Enemy::UpdateLeave;
 	}
 }
 
 void Enemy::UpdateLeave() {
-	// 離脱フェーズの速度
-	const Vector3 velocityLeave = {0, 0, 0.1f};
+	// 離脱フェーズ：回転しながら飛び去る（ここは以前のまま）
+	worldTransform_.rotation_.y += 0.02f;
+	worldTransform_.rotation_.x += 0.01f;
+	worldTransform_.rotation_.z += 0.02f;
 
-	// 移動
-	worldTransform_.translation_ += velocityLeave;
+	// 向いている方向に進む
+	Vector3 move = {0, 0, -0.4f};
+	Matrix4x4 matRot = MakeAffineMatrix({1.0f, 1.0f, 1.0f}, worldTransform_.rotation_, {0.0f, 0.0f, 0.0f});
+	move = TransformNormal(move, matRot);
+
+	worldTransform_.translation_.x += move.x;
+	worldTransform_.translation_.y += move.y;
+	worldTransform_.translation_.z += move.z;
 }
 
 void Enemy::Fire() {
-	// 敵の座標をコピー
 	Vector3 position = worldTransform_.translation_;
 
-	// 弾の速度 (仮にZ-方向、プレイヤーより少し遅く)
+	// ★修正: 本体を180度回転させているので、弾はプラス方向に出せば手前に飛ぶ
 	const float kBulletSpeed = -0.5f;
 	Vector3 velocity(0, 0, kBulletSpeed);
 
-	// 速度ベクトルを敵の向きに合わせて回転させる
-	velocity = TransformNormal(velocity, worldTransform_.matWorld_);
+	Matrix4x4 matRot = MakeAffineMatrix({1.0f, 1.0f, 1.0f}, worldTransform_.rotation_, {0.0f, 0.0f, 0.0f});
+	velocity = TransformNormal(velocity, matRot);
 
-	// 弾を生成し、初期化
 	EnemyBullet* newBullet = new EnemyBullet();
 	newBullet->Initialize(bulletModel_, position, velocity);
-
-	// 弾を登録する
 	bullets_.push_back(newBullet);
 }
+
+void Enemy::OnCollision() { isDead_ = true; }

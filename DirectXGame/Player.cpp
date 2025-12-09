@@ -75,11 +75,14 @@ void Player::Update() {
 	for (PlayerBullet* bullet : bullets_) {
 		bullet->Update();
 	}
-
+#ifdef _DEBUG
 	// キャラクターの座標を画面表示する処理
 	ImGui::Begin("Player Info");
 	ImGui::Text("Translation: (%.2f, %.2f, %.2f)", worldTransform_.translation_.x, worldTransform_.translation_.y, worldTransform_.translation_.z);
 	ImGui::End();
+#endif // _DEBUG
+
+
 
 	// ワールド行列更新
 	UpdateWorldMatrix(worldTransform_);

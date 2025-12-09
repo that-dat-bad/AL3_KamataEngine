@@ -34,7 +34,6 @@ private:
 	KamataEngine::Model* enemyModel_ = nullptr;
 	KamataEngine::Model* enemyBulletModel_ = nullptr;
 
-
 	// カメラ
 	KamataEngine::Camera camera_;
 
@@ -57,6 +56,9 @@ private:
 
 	// フェード用スプライト
 	KamataEngine::Sprite* fadeSprite_ = nullptr;
-	// フェード用テクスチャハンドル (1x1の白画像で代用)
+	// フェード用テクスチャハンドル
 	uint32_t fadeTextureHandle_ = 0;
+
+	// ★追加: ゲームの制限タイマー
+	int32_t gameTimer_ = 0;
 };

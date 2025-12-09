@@ -1,8 +1,6 @@
 #include "PlayerBullet.h"
-#include"KamataEngine.h"
-#include "mathStruct.h"
 #include <cassert>
-
+#include "mathStruct.h"
 using namespace KamataEngine;
 
 void PlayerBullet::Initialize(Model* model, const Vector3& position, const Vector3& velocity) {
@@ -10,8 +8,8 @@ void PlayerBullet::Initialize(Model* model, const Vector3& position, const Vecto
 	assert(model);
 
 	model_ = model;
-	// テクスチャ読み込み
-	textureHandle_ = TextureManager::Load("black.png");
+	// テクスチャ読み込み (白画像などを指定、なければデフォルトでOK)
+	textureHandle_ = TextureManager::Load("white1x1.png");
 
 	// ワールドトランスフォームの初期化
 	worldTransform_.Initialize();
@@ -23,7 +21,7 @@ void PlayerBullet::Initialize(Model* model, const Vector3& position, const Vecto
 }
 
 void PlayerBullet::Update() {
-
+	// 座標を移動させる
 	worldTransform_.translation_ += velocity_;
 
 	// 時間経過でデス
@@ -38,4 +36,12 @@ void PlayerBullet::Update() {
 void PlayerBullet::Draw(const Camera& camera) {
 	// モデルの描画
 	model_->Draw(worldTransform_, camera, textureHandle_);
+}
+
+void PlayerBullet::OnCollision() {
+	isDead_ = true;
+}
+
+Vector3 PlayerBullet::GetWorldPosition() const {
+	return worldTransform_.translation_;
 }

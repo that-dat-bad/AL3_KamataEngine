@@ -1,8 +1,8 @@
 #include "TitleScene.h"
 #include "KamataEngine.h"
+#include "mathStruct.h"
 #include <assert.h>
 #include <cmath>
-#include "mathStruct.h"
 
 using namespace KamataEngine;
 
@@ -21,6 +21,9 @@ void TitleScene::Initialize() {
 	worldTransform_.Initialize();
 	camera_.Initialize();
 
+	// カメラの位置を -50 に設定
+	camera_.translation_.z = -50.0f;
+
 	// Inputインスタンスの取得
 	input_ = Input::GetInstance();
 
@@ -35,12 +38,14 @@ void TitleScene::Initialize() {
 	fadeTextureHandle_ = TextureManager::Load("white1x1.png");
 
 	// --- 3Dモデル (タイトルロゴ) の初期化 ---
+	// ★変更：初期位置を -35.0f に設定（カメラに近い位置からスタート）
+	logoPosition_ = {0.0f, 0.0f, -45.0f};
+
 	logo_ = new TitleLogo();
 	logo_->Initialize(Model::CreateFromOBJ("title"), &camera_, logoPosition_);
 	logo_->SetPosition(logoPosition_);
 
 	// --- 背景 (天球) の初期化 ---
-	// "skydome" はBlenderから出したobjファイル名に合わせてください
 	skydomeModel_ = Model::CreateFromOBJ("titleSkydome");
 	skydomeTransform_.Initialize();
 	// 行列更新
@@ -48,12 +53,9 @@ void TitleScene::Initialize() {
 	skydomeTransform_.TransferMatrix();
 
 	// --- 誘導表示 (Press Space スプライト) の初期化 ---
-	// 画像読み込み (ファイル名は実際の画像に合わせてください)
 	pressSpaceTexture_ = TextureManager::Load("./Resources/pressSpace.png");
 
 	// スプライト生成
-	// 画面中央下 (x=640, y=550) あたりに配置
-	// サイズ {300, 60} は画像の大きさに合わせて調整してください
 	pressSpaceSprite_ = new Sprite(
 	    pressSpaceTexture_, {640.0f, 550.0f}, {1280.0f, 130.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.5f, 0.5f}, // アンカーポイントを中央に
 	    false, false);
@@ -63,7 +65,10 @@ void TitleScene::Initialize() {
 	// --- フェードスプライト設定 ---
 	Vector2 position = {0.0f, 0.0f};
 	Vector2 size = {1280.0f, 720.0f};
-	Vector4 color = {0.0f, 0.0f, 0.0f, 1.0f};
+
+	// フェード色を「白」に設定
+	Vector4 color = {1.0f, 1.0f, 1.0f, 1.0f};
+
 	Vector2 anchorpoint = {0.0f, 0.0f};
 
 	fadeSprite_ = new Sprite(fadeTextureHandle_, position, size, color, anchorpoint, false, false);
@@ -108,7 +113,6 @@ void TitleScene::Draw() {
 	KamataEngine::Model::PreDraw(dxCommon->GetCommandList());
 
 	// 1. 背景 (天球)
-	// 色を強制的に黒にし、ライトの影響を切る
 
 	skydomeModel_->Draw(skydomeTransform_, camera_);
 
@@ -127,7 +131,7 @@ void TitleScene::Draw() {
 		pressSpaceSprite_->Draw();
 	}
 
-	// 2. フェード用黒画像 (最前面)
+	// 2. フェード用画像 (最前面)
 	float alpha = 0.0f;
 	if (phase_ == ScenePhase::kFadeIn) {
 		alpha = (float)fadeTimer_ / (float)kFadeDuration_;
@@ -136,7 +140,8 @@ void TitleScene::Draw() {
 	}
 
 	if (alpha > 0.0f && fadeSprite_) {
-		fadeSprite_->SetColor({0.0f, 0.0f, 0.0f, alpha});
+		// 白で描画
+		fadeSprite_->SetColor({1.0f, 1.0f, 1.0f, alpha});
 		fadeSprite_->Draw();
 	}
 
@@ -193,6 +198,18 @@ std::optional<SceneID> TitleScene::UpdateMain() {
 
 std::optional<SceneID> TitleScene::UpdateFadeOut() {
 	fadeTimer_++;
+
+	// ロゴをカメラ方向（マイナス方向）へ移動
+	logoPosition_.z -= 0.5f;
+
+	// ★変更： -49.0f に到達したら停止（カメラの少し手前）
+	if (logoPosition_.z <= -49.99f) {
+		logoPosition_.z = -49.99f;
+	}
+
+	logo_->SetPosition(logoPosition_);
+	logo_->Update();
+
 	if (fadeTimer_ >= kFadeDuration_) {
 		return SceneID::kGame;
 	}
