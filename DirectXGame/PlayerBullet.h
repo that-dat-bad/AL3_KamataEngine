@@ -12,7 +12,7 @@ public:
 	/// </summary>
 	/// <param name="model">モデル</param>
 	/// <param name="position">初期座標</param>
-	/// <param name="velocity">速度</param> (スライド 165023.png)
+	/// <param name="velocity">速度</param>
 	void Initialize(KamataEngine::Model* model, const KamataEngine::Vector3& position, const KamataEngine::Vector3& velocity);
 
 	/// <summary>
@@ -32,7 +32,7 @@ public:
 private:
 	// ワールド変換データ
 	KamataEngine::WorldTransform worldTransform_;
-	// モデルのポインタ（借りてくるやつ）
+	// モデルのポインタ
 	KamataEngine::Model* model_ = nullptr;
 	// テクスチャハンドル
 	uint32_t textureHandle_ = 0;

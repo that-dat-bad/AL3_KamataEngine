@@ -16,7 +16,6 @@ void Enemy::Initialize(Model* model, const KamataEngine::Vector3& position) {
 	assert(model);
 	model_ = model;
 
-	textureHandle_ = TextureManager::Load("UVChecker.png");
 
 	worldTransform_.Initialize();
 	worldTransform_.translation_ = position;
@@ -56,7 +55,7 @@ void Enemy::Update() {
 
 void Enemy::Draw(const Camera& camera) {
 	// 敵本体の描画
-	model_->Draw(worldTransform_, camera, textureHandle_);
+	model_->Draw(worldTransform_, camera);
 
 	// 弾の描画
 	for (EnemyBullet* bullet : bullets_) {
@@ -99,7 +98,7 @@ void Enemy::Fire() {
 
 	// 弾を生成し、初期化
 	EnemyBullet* newBullet = new EnemyBullet();
-	newBullet->Initialize(model_, position, velocity);
+	newBullet->Initialize(bulletModel_, position, velocity);
 
 	// 弾を登録する
 	bullets_.push_back(newBullet);

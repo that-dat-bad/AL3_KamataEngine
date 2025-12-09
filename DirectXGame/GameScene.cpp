@@ -22,18 +22,18 @@ void GameScene::Initialize() {
 	//textureHandle_ = TextureManager::Load("UVChecker.png");
 	playerModel_ = Model::CreateFromOBJ("player");
 	enemyModel_ = Model::CreateFromOBJ("enemy");
-
+	playerBulletModel_ = Model::Create();
+	enemyBulletModel_ = Model::Create();
 
 	worldTransform_.Initialize();
 	camera_.Initialize();
 
 	// --- カメラの位置を調整 ---
 	camera_.translation_ = {0.0f, 2.5f, -15.0f};
-	// ---
 
 	player_ = new Player();
-	// ★プレイヤーモデルを渡す
-	player_->Initialize(playerModel_, textureHandle_, &camera_);
+	player_->Initialize(playerModel_, &camera_);
+	player_->SetBulletModel(playerBulletModel_);
 
 	// Inputインスタンスの取得
 	input_ = Input::GetInstance();
@@ -44,8 +44,9 @@ void GameScene::Initialize() {
 
 	// 敵の生成
 	Enemy* newEnemy = new Enemy();
-	// ★敵モデルを渡す
+	newEnemy->SetBulletModel(enemyBulletModel_);
 	newEnemy->Initialize(enemyModel_, {0, 0, 50.0f});
+
 	enemies_.push_back(newEnemy);
 
 	// フェーズとタイマーの初期化
@@ -63,7 +64,6 @@ void GameScene::Initialize() {
 	fadeSprite_->SetTextureRect({0.0f, 0.0f}, {1.0f, 1.0f});
 }
 
-// Update() はフェーズの分岐管理のみ
 std::optional<SceneID> GameScene::Update() {
 	switch (phase_) {
 	case ScenePhase::kFadeIn:

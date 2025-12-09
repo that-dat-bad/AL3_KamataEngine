@@ -30,7 +30,9 @@ private:
 
 	// 3Dモデルデータ
 	KamataEngine::Model* playerModel_ = nullptr;
+	KamataEngine::Model* playerBulletModel_ = nullptr;
 	KamataEngine::Model* enemyModel_ = nullptr;
+	KamataEngine::Model* enemyBulletModel_ = nullptr;
 
 
 	// カメラ

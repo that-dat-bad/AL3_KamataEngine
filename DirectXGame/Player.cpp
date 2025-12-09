@@ -4,24 +4,22 @@
 #include <DirectXMath.h>
 #include <algorithm>
 #include <cassert>
-
+#define _USE_MATH_DEFINES
+#include<math.h>
 using namespace KamataEngine;
 
 Player::~Player() {
-	// bullet_の解放
 	for (PlayerBullet* bullet : bullets_) {
 		delete bullet;
 	}
 }
 
-void Player::Initialize(KamataEngine::Model* model, uint32_t textureHandle, Camera* camera) {
+void Player::Initialize(KamataEngine::Model* model, Camera* camera) {
 	assert(model);
 	model_ = model;
-	textureHandle_ = textureHandle;
 	camera_ = camera;
 	worldTransform_.Initialize();
-
-	// シングルトンインスタンスを取得
+	worldTransform_.rotation_.y = static_cast<float>(M_PI);
 	input_ = Input::GetInstance();
 }
 
@@ -59,13 +57,6 @@ void Player::Update() {
 	// 座標移動（ベクトルの加算）
 	worldTransform_.translation_ += move;
 
-	// 旋回（回転）
-	const float kRotSpeed = 0.02f;
-	if (input_->PushKey(DIK_A)) {
-		worldTransform_.rotation_.y -= kRotSpeed;
-	} else if (input_->PushKey(DIK_D)) {
-		worldTransform_.rotation_.y += kRotSpeed;
-	}
 
 	// 移動限界座標
 	const float kMoveLimitX = 10.0f;
@@ -97,7 +88,7 @@ void Player::Update() {
 void Player::Draw() {
 
 
-	model_->Draw(worldTransform_, *camera_, textureHandle_);
+	model_->Draw(worldTransform_, *camera_);
 
 	// 弾描画
 	for (PlayerBullet* bullet : bullets_) {
@@ -114,14 +105,14 @@ void Player::Attack() {
 
 		// 弾の速度
 		const float kBulletSpeed = 1.0f;
-		Vector3 velocity(0, 0, kBulletSpeed);
+		Vector3 velocity(0, 0, -kBulletSpeed);
 
 		// 速度ベクトルを自機の向きに合わせて回転させる
 		velocity = TransformNormal(velocity, worldTransform_.matWorld_);
 
-		// 弾を生成し、初期化
+		// 弾を生成、初期化
 		PlayerBullet* newBullet = new PlayerBullet();
-		newBullet->Initialize(model_, position, velocity);
+		newBullet->Initialize(bulletModel_, position, velocity);
 
 		// 弾を登録する
 		bullets_.push_back(newBullet);

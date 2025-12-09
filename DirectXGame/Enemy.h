@@ -1,6 +1,6 @@
 #pragma once
-#include "KamataEngine.h"
 #include "EnemyBullet.h"
+#include "KamataEngine.h"
 #include <list>
 #include <stdint.h>
 
@@ -35,6 +35,8 @@ public:
 	/// <returns></returns>
 	bool IsDead() const { return isDead_; }
 
+	void SetBulletModel(KamataEngine::Model* model) { bulletModel_ = model; };
+
 private:
 	/// <summary>
 	/// 接近フェーズの更新
@@ -45,7 +47,6 @@ private:
 	/// 離脱フェーズの更新
 	/// </summary>
 	void UpdateLeave();
-
 
 	/// <summary>
 	/// 弾発射
@@ -61,8 +62,7 @@ private:
 	KamataEngine::WorldTransform worldTransform_;
 	// モデル
 	KamataEngine::Model* model_ = nullptr;
-	// テクスチャハンドル
-	uint32_t textureHandle_ = 0;
+	KamataEngine::Model* bulletModel_ = nullptr;
 
 	// デスフラグ
 	bool isDead_ = false;

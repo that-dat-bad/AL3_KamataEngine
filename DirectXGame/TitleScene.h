@@ -43,10 +43,8 @@ private:
 	std::optional<SceneID> UpdateMain();
 	std::optional<SceneID> UpdateFadeOut();
 
-	// --- ★以下を追加 ---
 	// フェード用スプライト
 	KamataEngine::Sprite* fadeSprite_ = nullptr;
 	// フェード用テクスチャハンドル (1x1の白画像で代用)
 	uint32_t fadeTextureHandle_ = 0;
-	// --- ★追加ここまで ---
 };

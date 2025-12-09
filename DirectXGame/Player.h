@@ -11,11 +11,13 @@ public:
 	/// </summary>
 	~Player();
 
-	void Initialize(KamataEngine::Model* model, uint32_t textureHandle, KamataEngine::Camera* camera);
+	void Initialize(KamataEngine::Model* model, KamataEngine::Camera* camera);
 
 	void Update();
 
 	void Draw();
+	
+	void SetBulletModel(KamataEngine::Model* model) { bulletModel_ = model; };
 
 private:
 	/// <summary>
@@ -27,8 +29,7 @@ private:
 	KamataEngine::WorldTransform worldTransform_;
 	// 3Dモデルデータ
 	KamataEngine::Model* model_ = nullptr;
-	// テクスチャハンドル
-	uint32_t textureHandle_ = 0;
+	KamataEngine::Model* bulletModel_ = nullptr;
 
 	KamataEngine::Camera* camera_ = nullptr;
 

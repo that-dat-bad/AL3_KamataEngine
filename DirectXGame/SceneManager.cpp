@@ -14,11 +14,13 @@ SceneManager::~SceneManager() {
 }
 
 void SceneManager::Initialize() {
-	currentScene_ = new GameScene();
+	currentScene_ = new TitleScene();
 	currentScene_->Initialize();
 	currentSceneID_ = SceneID::kTitle;
 
 	#ifdef _DEBUG
+	currentScene_ = new GameScene();
+	currentScene_->Initialize();
 	currentSceneID_ = SceneID::kGame;
 #endif // _DEBUG
 }
