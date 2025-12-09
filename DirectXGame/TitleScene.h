@@ -1,8 +1,7 @@
-// TitleScene.h
 #pragma once
 #include "IScene.h"
 #include "KamataEngine.h"
-
+#include "TitleLogo.h"
 #include <list>
 
 class TitleScene : public IScene {
@@ -49,8 +48,7 @@ private:
 	uint32_t fadeTextureHandle_ = 0;
 
 	//タイトルロゴの3Dモデル
-	KamataEngine::Model* titleLogoModel_ = nullptr;
-	KamataEngine::WorldTransform titleLogoWorldTransform_;
+	TitleLogo* logo_ = nullptr;
 	// 誘導の3Dモデル
 	KamataEngine::Model* guideModel_ = nullptr;
 	KamataEngine::WorldTransform guideWorldTransform_;

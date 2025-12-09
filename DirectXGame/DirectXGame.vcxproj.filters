@@ -60,6 +60,9 @@
     <ClCompile Include="SceneManager.cpp">
       <Filter>Scene</Filter>
     </ClCompile>
+    <ClCompile Include="TitleLogo.cpp">
+      <Filter>Scene\Title</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\shaders\SpritePS.hlsl">
@@ -140,6 +143,9 @@
     </ClInclude>
     <ClInclude Include="IScene.h">
       <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="TitleLogo.h">
+      <Filter>Scene\Title</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

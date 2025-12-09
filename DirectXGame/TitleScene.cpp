@@ -8,7 +8,7 @@ TitleScene::~TitleScene() {
 	delete model_;
 	delete debugCamera_;
 	delete fadeSprite_;
-	delete titleLogoModel_;
+	delete logo_;
 	delete guideModel_;
 }
 
@@ -33,9 +33,9 @@ void TitleScene::Initialize() {
 
 	//---3Dモデルの初期化---
 	//タイトルロゴ
-	titleLogoModel_ = Model::CreateFromOBJ("title");
-	titleLogoWorldTransform_.Initialize();
-	titleLogoWorldTransform_.translation_ = {0.0f, 1.0f, 50.0f};
+	logo_ = new TitleLogo();
+	logo_->Initialize(Model::CreateFromOBJ("title"), &camera_, {0.0f, 0.0f, -45.0f});
+
 	// 誘導
 	guideModel_ = Model::CreateFromOBJ("pressSpace");
 	guideWorldTransform_.Initialize();
@@ -84,7 +84,7 @@ void TitleScene::Draw() {
 	KamataEngine::Model::PreDraw(dxCommon->GetCommandList());
 	// (ここにタイトルロゴなどのモデル描画処理を追加できます)
 	// model_->Draw(worldTransform_, camera_, textureHandle_);
-	titleLogoModel_->Draw(titleLogoWorldTransform_, camera_);
+	logo_->Draw();
 	guideModel_->Draw(guideWorldTransform_, camera_);
 	KamataEngine::Model::PostDraw();
 
