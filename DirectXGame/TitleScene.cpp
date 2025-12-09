@@ -1,5 +1,3 @@
-// TitleScene.cpp
-
 #include "TitleScene.h"
 #include "KamataEngine.h"
 #include <assert.h>
@@ -9,7 +7,9 @@ using namespace KamataEngine;
 TitleScene::~TitleScene() {
 	delete model_;
 	delete debugCamera_;
-	delete fadeSprite_; // スプライトの解放
+	delete fadeSprite_;
+	delete titleLogoModel_;
+	delete guideModel_;
 }
 
 void TitleScene::Initialize() {
@@ -29,19 +29,28 @@ void TitleScene::Initialize() {
 	fadeTimer_ = kFadeDuration_;
 
 	// --- フェード用スプライトの初期化 ---
-	// フェード用のテクスチャ (1x1の白画像)
 	fadeTextureHandle_ = TextureManager::Load("white1x1.png");
+
+	//---3Dモデルの初期化---
+	//タイトルロゴ
+	titleLogoModel_ = Model::CreateFromOBJ("title");
+	titleLogoWorldTransform_.Initialize();
+	titleLogoWorldTransform_.translation_ = {0.0f, 1.0f, 50.0f};
+	// 誘導
+	guideModel_ = Model::CreateFromOBJ("pressSpace");
+	guideWorldTransform_.Initialize();
+	guideWorldTransform_.translation_ = {0.0f, -2.0f, 5.0f};
 
 	// パラメータをあらかじめ変数に用意
 	Vector2 position = {0.0f, 0.0f};
-	Vector2 size = {1280.0f, 720.0f};         // ★画面サイズ
-	Vector4 color = {0.0f, 0.0f, 0.0f, 1.0f}; // ★初期色は黒
+	Vector2 size = {1280.0f, 720.0f};
+	Vector4 color = {0.0f, 0.0f, 0.0f, 1.0f};
 	Vector2 anchorpoint = {0.0f, 0.0f};
 
 	// size や position を引数に渡すコンストラクタを使用する
 	fadeSprite_ = new Sprite(
 	    fadeTextureHandle_, position,
-	    size, // ★
+	    size, 
 	    color, anchorpoint,
 	    false, // isFlipX
 	    false  // isFlipY
@@ -75,8 +84,9 @@ void TitleScene::Draw() {
 	KamataEngine::Model::PreDraw(dxCommon->GetCommandList());
 	// (ここにタイトルロゴなどのモデル描画処理を追加できます)
 	// model_->Draw(worldTransform_, camera_, textureHandle_);
+	titleLogoModel_->Draw(titleLogoWorldTransform_, camera_);
+	guideModel_->Draw(guideWorldTransform_, camera_);
 	KamataEngine::Model::PostDraw();
-
 
 	// --- フェードの描画処理 ---
 	float alpha = 0.0f;

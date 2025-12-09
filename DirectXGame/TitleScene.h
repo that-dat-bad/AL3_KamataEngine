@@ -47,4 +47,11 @@ private:
 	KamataEngine::Sprite* fadeSprite_ = nullptr;
 	// フェード用テクスチャハンドル (1x1の白画像で代用)
 	uint32_t fadeTextureHandle_ = 0;
+
+	//タイトルロゴの3Dモデル
+	KamataEngine::Model* titleLogoModel_ = nullptr;
+	KamataEngine::WorldTransform titleLogoWorldTransform_;
+	// 誘導の3Dモデル
+	KamataEngine::Model* guideModel_ = nullptr;
+	KamataEngine::WorldTransform guideWorldTransform_;
 };
