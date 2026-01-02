@@ -4,14 +4,16 @@
 #include <list>
 #include <stdint.h>
 
-// ★追加：Playerクラスがあることを前方宣言
+// Playerクラスがあることを前方宣言
 class Player;
 
 class Enemy {
 public:
 	~Enemy();
 
-	void Initialize(KamataEngine::Model* model, const KamataEngine::Vector3& position);
+	// ★変更: velocityを受け取るように変更
+	void Initialize(KamataEngine::Model* model, const KamataEngine::Vector3& position, const KamataEngine::Vector3& velocity);
+
 	void Update();
 	void Draw(const KamataEngine::Camera& camera);
 
@@ -19,7 +21,7 @@ public:
 
 	void SetBulletModel(KamataEngine::Model* model) { bulletModel_ = model; };
 
-	// ★追加：プレイヤーの情報をセットする関数
+	// プレイヤーの情報をセットする関数
 	void SetPlayer(Player* player) { player_ = player; }
 
 	KamataEngine::Vector3 GetWorldPosition() const { return worldTransform_.translation_; }
@@ -38,10 +40,13 @@ private:
 	KamataEngine::Model* model_ = nullptr;
 	KamataEngine::Model* bulletModel_ = nullptr;
 
+	// ★追加: 速度
+	KamataEngine::Vector3 velocity_;
+
 	bool isDead_ = false;
 
 	std::list<EnemyBullet*> bullets_;
 
-	// ★追加：プレイヤーへのポインタ
+	// プレイヤーへのポインタ
 	Player* player_ = nullptr;
 };

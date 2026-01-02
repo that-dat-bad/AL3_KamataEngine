@@ -3,9 +3,14 @@
 #include "IScene.h"
 #include "KamataEngine.h"
 #include "Player.h"
-#include "ResultScene.h" // ★追加: 勝敗フラグを操作するために必要
+#include "ResultScene.h"
 #include <assert.h>
 #include <cmath> // 距離計算用
+
+// ★追加: JSONとファイル読み込み用
+#include "json.hpp"
+#include <fstream>
+using json = nlohmann::json;
 
 using namespace KamataEngine;
 
@@ -49,19 +54,49 @@ void GameScene::Initialize() {
 	input_ = Input::GetInstance();
 	debugCamera_ = new DebugCamera(1280, 720);
 
-	// 敵の生成
-	Enemy* newEnemy = new Enemy();
-	newEnemy->SetBulletModel(enemyBulletModel_);
-	newEnemy->Initialize(enemyModel_, {0, 0, 50.0f});
-	// プレイヤー情報をセット
-	newEnemy->SetPlayer(player_);
+	// ==================================================
+	// ★変更: JSONファイルから敵データを読み込んで生成
+	// ==================================================
+	std::ifstream file("./Resources/enemy_data.json");
+	if (file.fail()) {
+		assert(0 && "JSON file not found. Please check Resources folder.");
+	}
 
-	enemies_.push_back(newEnemy);
+	json deserialized;
+	file >> deserialized;
+
+	// "enemies" 配列をループして生成
+	for (const auto& enemyData : deserialized["enemies"]) {
+		// 座標取得
+		Vector3 position;
+		position.x = enemyData["position"][0];
+		position.y = enemyData["position"][1];
+		position.z = enemyData["position"][2];
+
+		// 速度取得
+		Vector3 velocity;
+		velocity.x = enemyData["velocity"][0];
+		velocity.y = enemyData["velocity"][1];
+		velocity.z = enemyData["velocity"][2];
+
+		// 敵の生成
+		Enemy* newEnemy = new Enemy();
+		newEnemy->SetBulletModel(enemyBulletModel_);
+
+		// Initializeに速度も渡す
+		newEnemy->Initialize(enemyModel_, position, velocity);
+
+		// プレイヤー情報をセット
+		newEnemy->SetPlayer(player_);
+
+		enemies_.push_back(newEnemy);
+	}
+	// ==================================================
 
 	phase_ = ScenePhase::kFadeIn;
 	fadeTimer_ = kFadeDuration_;
 
-	// ★追加: 制限時間の設定 (例: 60fps * 30秒 = 1800)
+	// 制限時間の設定 (例: 60fps * 30秒 = 1800)
 	gameTimer_ = 60 * 30;
 
 	fadeTextureHandle_ = TextureManager::Load("white1x1.png");
@@ -96,7 +131,7 @@ std::optional<SceneID> GameScene::UpdateFadeIn() {
 }
 
 std::optional<SceneID> GameScene::UpdateMain() {
-	// ★追加: 制限時間を減らす
+	// 制限時間を減らす
 	gameTimer_--;
 
 	player_->Update();
@@ -160,7 +195,7 @@ std::optional<SceneID> GameScene::UpdateMain() {
 	}
 
 	// =============================================
-	// ★追加: 勝敗判定
+	// 勝敗判定
 	// =============================================
 
 	// パターンA: 敵が全滅していたら「WIN」
@@ -176,10 +211,6 @@ std::optional<SceneID> GameScene::UpdateMain() {
 		phase_ = ScenePhase::kFadeOut;
 		fadeTimer_ = 0;
 	}
-
-	// パターンC: プレイヤーが被弾して負ける場合の処理が必要ならここに追加
-	// (今回は「時間切れ」がLOSE条件とのことなので、被弾で即LOSEかは仕様次第ですが、
-	//  もし被弾で負けにするなら player_->IsDead() などを判定します)
 
 #ifdef _DEBUG
 	if (input_->TriggerKey(DIK_0)) {
