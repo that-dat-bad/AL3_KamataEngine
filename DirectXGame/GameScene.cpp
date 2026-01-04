@@ -30,8 +30,6 @@ GameScene::~GameScene() {
 	delete enemyBulletModel_;
 	delete playerMissileModel_;
 	delete explosionModel_;
-	delete enemyModel_;
-	delete enemyBulletModel_;
 	delete groundModel_;
 	delete ground_;
 

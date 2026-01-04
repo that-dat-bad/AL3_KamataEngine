@@ -16,8 +16,6 @@ void ResultScene::Initialize() {
 
 	// 画面中央に配置
 	camera_.translation_.z = -10.0f;
-
-
 }
 
 std::optional<SceneID> ResultScene::Update() {
@@ -34,9 +32,10 @@ void ResultScene::Draw() {
 	// モデルがあれば描画
 	KamataEngine::Model::PostDraw();
 
+#ifdef DEBUG
+
 	// --- 結果表示 (ImGui) ---
 	ImGui::Begin("RESULT");
-
 
 	if (isWin) {
 		ImGui::TextColored({0.0f, 1.0f, 0.0f, 1.0f}, "MISSION ACCOMPLISHED");
@@ -52,4 +51,5 @@ void ResultScene::Draw() {
 	ImGui::TextColored({0.5f, 0.5f, 0.5f, 1.0f}, "Push SPACE to Return");
 
 	ImGui::End();
+#endif // DEBUG
 }
