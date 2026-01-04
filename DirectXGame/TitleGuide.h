@@ -12,10 +12,10 @@ private:
 	// カメラ
 	KamataEngine::Camera* camera_ = nullptr;
 
-	// ★追加：点滅制御用のパラメータ
+	//点滅制御用のパラメータ
 	float blinkParameter_ = 0.0f;
 
-	// ★追加：点滅の周期（速さ）
+	//点滅の周期
 	const float kBlinkSpeed_ = 0.1f;
 
 public:

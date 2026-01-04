@@ -51,3 +51,7 @@ Vector3 operator*(const Vector3& v, float s);
 Vector3 operator/(const Vector3& v, float s);
 Vector3& operator*=(Vector3& v, float s);
 Vector3& operator/=(Vector3& v, float s);
+
+float LerpShort(float start, float end, float t);
+
+KamataEngine::Vector2 WorldToScreen(const KamataEngine::Vector3& worldPos, const KamataEngine::Matrix4x4& matView, const KamataEngine::Matrix4x4& matProjection, float screenWidth, float screenHeight);

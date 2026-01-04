@@ -38,7 +38,6 @@ void TitleScene::Initialize() {
 	fadeTextureHandle_ = TextureManager::Load("white1x1.png");
 
 	// --- 3Dモデル (タイトルロゴ) の初期化 ---
-	// ★変更：初期位置を -35.0f に設定（カメラに近い位置からスタート）
 	logoPosition_ = {0.0f, 0.0f, -45.0f};
 
 	logo_ = new TitleLogo();
@@ -202,7 +201,6 @@ std::optional<SceneID> TitleScene::UpdateFadeOut() {
 	// ロゴをカメラ方向（マイナス方向）へ移動
 	logoPosition_.z -= 0.5f;
 
-	// ★変更： -49.0f に到達したら停止（カメラの少し手前）
 	if (logoPosition_.z <= -49.99f) {
 		logoPosition_.z = -49.99f;
 	}

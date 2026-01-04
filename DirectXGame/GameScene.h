@@ -1,23 +1,28 @@
-// GameScene.h
 #pragma once
 #include "Enemy.h"
+#include "Explosion.h"
+#include "Ground.h"
 #include "IScene.h"
 #include "KamataEngine.h"
 #include "Player.h"
+#include "Reticle.h"
 #include <list>
 #include <optional>
+#include <vector>
+
+struct EnemySpawnData {
+	int spawnTime;
+	KamataEngine::Vector3 position;
+	KamataEngine::Vector3 velocity;
+	std::string type;
+	std::string attackPattern;
+};
 
 class GameScene : public IScene {
 public:
 	~GameScene() override;
-
-	// 初期化
 	void Initialize() override;
-
-	// 更新
 	std::optional<SceneID> Update() override;
-
-	// 描画
 	void Draw() override;
 
 private:
@@ -28,37 +33,45 @@ private:
 private:
 	uint32_t textureHandle_ = 0;
 
-	// 3Dモデルデータ
+	// モデル
 	KamataEngine::Model* playerModel_ = nullptr;
 	KamataEngine::Model* playerBulletModel_ = nullptr;
 	KamataEngine::Model* enemyModel_ = nullptr;
 	KamataEngine::Model* enemyBulletModel_ = nullptr;
+	KamataEngine::Model* playerMissileModel_ = nullptr;
+	KamataEngine::Model* explosionModel_ = nullptr;
+	KamataEngine::Model* groundModel_ = nullptr;
 
-	// カメラ
 	KamataEngine::Camera camera_;
-
-	// 自キャラ
 	Player* player_ = nullptr;
-
 	KamataEngine::WorldTransform worldTransform_;
-
-	// キーボード入力
 	KamataEngine::Input* input_ = nullptr;
-
-	// デバッグカメラ
 	KamataEngine::DebugCamera* debugCamera_ = nullptr;
-
-	// デバッグカメラ有効
 	bool isDebugCameraActive_ = false;
 
-	// 敵
-	std::list<Enemy*> enemies_;
+	// 地面
+	Ground* ground_ = nullptr;
 
-	// フェード用スプライト
+	// リスト
+	std::list<Enemy*> enemies_;
+	std::list<EnemySpawnData> enemySpawnList_;
+	std::list<Explosion*> explosions_;
+
+	Reticle* reticle_ = nullptr;
+	Enemy* lockedEnemy_ = nullptr;
+	KamataEngine::Sprite* lockOnMark_ = nullptr;
+	uint32_t lockOnTex_ = 0;
+
+	// UI
+	KamataEngine::Sprite* hpBarSprite_ = nullptr;
+	KamataEngine::Sprite* lifeIconSprite_ = nullptr;
+	uint32_t uiTexHandle_ = 0;
+	int score_ = 0;
+
+	// フェード
 	KamataEngine::Sprite* fadeSprite_ = nullptr;
-	// フェード用テクスチャハンドル
 	uint32_t fadeTextureHandle_ = 0;
 
-	// ★追加: ゲームの制限タイマー
-	int32_t gameTimer_ = 0;
+	int32_t gameLimitTimer_ = 0;
+	int32_t gameElapsedTime_ = 0;
 };

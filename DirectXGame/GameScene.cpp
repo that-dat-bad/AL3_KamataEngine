@@ -1,20 +1,21 @@
 #include "GameScene.h"
 #include "Enemy.h"
+#include "Explosion.h"
+#include "Ground.h"
 #include "IScene.h"
 #include "KamataEngine.h"
 #include "Player.h"
 #include "ResultScene.h"
-#include <assert.h>
-#include <cmath> // 距離計算用
-
-// ★追加: JSONとファイル読み込み用
+#include "Reticle.h"
 #include "json.hpp"
+#include "mathStruct.h"
+#include <assert.h>
+#include <cmath>
 #include <fstream>
-using json = nlohmann::json;
 
+using json = nlohmann::json;
 using namespace KamataEngine;
 
-// 距離の2乗を計算するヘルパー関数
 float LengthSquared(const Vector3& v1, const Vector3& v2) {
 	float dx = v1.x - v2.x;
 	float dy = v1.y - v2.y;
@@ -27,250 +28,364 @@ GameScene::~GameScene() {
 	delete enemyModel_;
 	delete playerBulletModel_;
 	delete enemyBulletModel_;
+	delete playerMissileModel_;
+	delete explosionModel_;
+	delete enemyModel_;
+	delete enemyBulletModel_;
+	delete groundModel_;
+	delete ground_;
+
 	delete player_;
 	delete debugCamera_;
-	for (Enemy* enemy : enemies_) {
-		delete enemy;
-	}
+	for (Enemy* e : enemies_)
+		delete e;
+	for (Explosion* e : explosions_)
+		delete e;
+
 	delete fadeSprite_;
+	delete reticle_;
+	delete lockOnMark_;
+	delete hpBarSprite_;
+	delete lifeIconSprite_;
 }
 
 void GameScene::Initialize() {
-	// textureHandle_ = TextureManager::Load("UVChecker.png");
 	playerModel_ = Model::CreateFromOBJ("player");
 	enemyModel_ = Model::CreateFromOBJ("enemy");
 	playerBulletModel_ = Model::Create();
 	enemyBulletModel_ = Model::Create();
 
+	playerMissileModel_ = Model::Create();
+	explosionModel_ = Model::Create();
+
+	//groundModel_ = Model::CreateFromOBJ("ground");
+	groundModel_ = Model::Create();
+
 	worldTransform_.Initialize();
 	camera_.Initialize();
-
 	camera_.translation_ = {0.0f, 2.5f, -15.0f};
+
+
+	ground_ = new Ground();
+	ground_->Initialize(groundModel_);
 
 	player_ = new Player();
 	player_->Initialize(playerModel_, &camera_);
 	player_->SetBulletModel(playerBulletModel_);
+	player_->SetMissileModel(playerMissileModel_);
 
 	input_ = Input::GetInstance();
 	debugCamera_ = new DebugCamera(1280, 720);
 
-	// ==================================================
-	// ★変更: JSONファイルから敵データを読み込んで生成
-	// ==================================================
+	reticle_ = new Reticle();
+	reticle_->Initialize();
+
+	lockOnTex_ = TextureManager::Load("white1x1.png");
+	lockOnMark_ = new Sprite(lockOnTex_, {0, 0}, {64, 64}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.5f, 0.5f}, false, false);
+	lockOnMark_->Initialize();
+
+	uiTexHandle_ = TextureManager::Load("white1x1.png");
+	hpBarSprite_ = new Sprite(uiTexHandle_, {50, 650}, {200, 20}, {0.0f, 1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, false, false);
+	hpBarSprite_->Initialize();
+	lifeIconSprite_ = new Sprite(uiTexHandle_, {0, 0}, {20, 20}, {1.0f, 1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, false, false);
+	lifeIconSprite_->Initialize();
+
+	score_ = 0;
+
+	// --- JSON読み込み ---
 	std::ifstream file("./Resources/enemy_data.json");
 	if (file.fail()) {
-		assert(0 && "JSON file not found. Please check Resources folder.");
+		assert(0 && "JSON file not found.");
 	}
-
 	json deserialized;
 	file >> deserialized;
 
-	// "enemies" 配列をループして生成
+	enemySpawnList_.clear();
 	for (const auto& enemyData : deserialized["enemies"]) {
-		// 座標取得
-		Vector3 position;
-		position.x = enemyData["position"][0];
-		position.y = enemyData["position"][1];
-		position.z = enemyData["position"][2];
-
-		// 速度取得
-		Vector3 velocity;
-		velocity.x = enemyData["velocity"][0];
-		velocity.y = enemyData["velocity"][1];
-		velocity.z = enemyData["velocity"][2];
-
-		// 敵の生成
-		Enemy* newEnemy = new Enemy();
-		newEnemy->SetBulletModel(enemyBulletModel_);
-
-		// Initializeに速度も渡す
-		newEnemy->Initialize(enemyModel_, position, velocity);
-
-		// プレイヤー情報をセット
-		newEnemy->SetPlayer(player_);
-
-		enemies_.push_back(newEnemy);
+		EnemySpawnData data;
+		data.spawnTime = enemyData["spawnTime"];
+		data.position = {enemyData["position"][0], enemyData["position"][1], enemyData["position"][2]};
+		data.velocity = {enemyData["velocity"][0], enemyData["velocity"][1], enemyData["velocity"][2]};
+		data.type = enemyData.value("type", "A");
+		data.attackPattern = enemyData.value("attackPattern", "Normal");
+		enemySpawnList_.push_back(data);
 	}
-	// ==================================================
+	enemySpawnList_.sort([](const EnemySpawnData& a, const EnemySpawnData& b) { return a.spawnTime < b.spawnTime; });
 
 	phase_ = ScenePhase::kFadeIn;
 	fadeTimer_ = kFadeDuration_;
-
-	// 制限時間の設定 (例: 60fps * 30秒 = 1800)
-	gameTimer_ = 60 * 30;
+	gameLimitTimer_ = 60 * 30;
+	gameElapsedTime_ = 0;
 
 	fadeTextureHandle_ = TextureManager::Load("white1x1.png");
-	Vector2 position = {0.0f, 0.0f};
-	Vector2 size = {1280.0f, 720.0f};
-	Vector4 color = {1.0f, 1.0f, 1.0f, 1.0f};
-	Vector2 anchorpoint = {0.0f, 0.0f};
-
-	fadeSprite_ = new Sprite(fadeTextureHandle_, position, size, color, anchorpoint, false, false);
+	fadeSprite_ = new Sprite(fadeTextureHandle_, {0, 0}, {1280, 720}, {1, 1, 1, 1}, {0, 0}, false, false);
 	fadeSprite_->Initialize();
 	fadeSprite_->SetTextureRect({0.0f, 0.0f}, {1.0f, 1.0f});
 }
 
 std::optional<SceneID> GameScene::Update() {
-	switch (phase_) {
-	case ScenePhase::kFadeIn:
+	if (phase_ == ScenePhase::kFadeIn)
 		return UpdateFadeIn();
-	case ScenePhase::kMain:
+	if (phase_ == ScenePhase::kMain)
 		return UpdateMain();
-	case ScenePhase::kFadeOut:
+	if (phase_ == ScenePhase::kFadeOut)
 		return UpdateFadeOut();
-	}
 	return std::nullopt;
 }
 
 std::optional<SceneID> GameScene::UpdateFadeIn() {
-	fadeTimer_--;
-	if (fadeTimer_ <= 0) {
+	if (--fadeTimer_ <= 0)
 		phase_ = ScenePhase::kMain;
-	}
+	return std::nullopt;
+}
+
+std::optional<SceneID> GameScene::UpdateFadeOut() {
+	if (++fadeTimer_ >= kFadeDuration_)
+		return SceneID::kResult;
 	return std::nullopt;
 }
 
 std::optional<SceneID> GameScene::UpdateMain() {
-	// 制限時間を減らす
-	gameTimer_--;
+	gameLimitTimer_--;
+	gameElapsedTime_++;
+
+
+	ground_->Update();
+
+	// 敵スポーン
+	while (!enemySpawnList_.empty()) {
+		const EnemySpawnData& data = enemySpawnList_.front();
+		if (data.spawnTime > gameElapsedTime_)
+			break;
+
+		Enemy* newEnemy = new Enemy();
+		newEnemy->SetBulletModel(enemyBulletModel_);
+		newEnemy->SetPlayer(player_);
+		newEnemy->Initialize(enemyModel_, data.position, data.velocity, data.type, data.attackPattern);
+
+		enemies_.push_back(newEnemy);
+		enemySpawnList_.pop_front();
+	}
 
 	player_->Update();
 
-	// 死亡した敵の削除処理
-	enemies_.remove_if([](Enemy* enemy) {
-		if (enemy->IsDead()) {
-			delete enemy;
+	enemies_.remove_if([](Enemy* e) {
+		if (e->IsDead()) {
+			delete e;
 			return true;
 		}
 		return false;
 	});
+	for (Enemy* e : enemies_)
+		e->Update();
+	explosions_.remove_if([](Explosion* e) {
+		if (e->IsDead()) {
+			delete e;
+			return true;
+		}
+		return false;
+	});
+	for (Explosion* e : explosions_)
+		e->Update();
 
-	for (Enemy* enemy : enemies_) {
-		enemy->Update();
-	}
-
-	// =============================================
-	// 当たり判定 (Collision)
-	// =============================================
+	// 当たり判定
 	const float kPlayerRadius = 1.0f;
-	const float kEnemyRadius = 1.0f;
+	const float kEnemyRadius = 4.0f;
 	const float kBulletRadius = 0.5f;
 
-	// --- 1. 自弾 vs 敵 ---
-	const std::list<PlayerBullet*>& playerBullets = player_->GetBullets();
-	for (PlayerBullet* pBullet : playerBullets) {
+	// 自弾 vs 敵
+	for (PlayerBullet* pBullet : player_->GetBullets()) {
 		for (Enemy* enemy : enemies_) {
 			if (pBullet->IsDead() || enemy->IsDead())
 				continue;
-
-			Vector3 posA = pBullet->GetWorldPosition();
-			Vector3 posB = enemy->GetWorldPosition();
-			float distSq = LengthSquared(posA, posB);
-
-			float hitRadius = kBulletRadius + kEnemyRadius;
-			if (distSq < hitRadius * hitRadius) {
+			if (LengthSquared(pBullet->GetWorldPosition(), enemy->GetWorldPosition()) < pow(kBulletRadius + kEnemyRadius, 2)) {
 				pBullet->OnCollision();
-				enemy->OnCollision(); // 敵死亡
+				enemy->OnCollision(pBullet->GetPower());
+				if (enemy->IsDead()) {
+					score_ += 100;
+					Explosion* newExp = new Explosion();
+					newExp->Initialize(explosionModel_, enemy->GetWorldPosition());
+					explosions_.push_back(newExp);
+				}
 			}
 		}
 	}
 
-	// --- 2. 敵弾 vs プレイヤー ---
+	// 敵弾 vs 自機
 	for (Enemy* enemy : enemies_) {
-		const std::list<EnemyBullet*>& enemyBullets = enemy->GetBullets();
-		for (EnemyBullet* eBullet : enemyBullets) {
+		for (EnemyBullet* eBullet : enemy->GetBullets()) {
 			if (eBullet->IsDead())
 				continue;
-
-			Vector3 posA = eBullet->GetWorldPosition();
-			Vector3 posB = player_->GetWorldPosition();
-			float distSq = LengthSquared(posA, posB);
-
-			float hitRadius = kBulletRadius + kPlayerRadius;
-			if (distSq < hitRadius * hitRadius) {
+			if (LengthSquared(eBullet->GetWorldPosition(), player_->GetWorldPosition()) < pow(kBulletRadius + kPlayerRadius, 2)) {
 				eBullet->OnCollision();
 				player_->OnCollision();
 			}
 		}
 	}
 
-	// =============================================
-	// 勝敗判定
-	// =============================================
+	// ミサイル vs 敵
+	for (PlayerMissile* missile : player_->GetMissiles()) {
+		for (Enemy* enemy : enemies_) {
+			if (missile->IsDead() || enemy->IsDead())
+				continue;
+			if (LengthSquared(missile->GetWorldPosition(), enemy->GetWorldPosition()) < pow(kBulletRadius + kEnemyRadius, 2)) {
+				missile->OnCollision();
+				enemy->OnCollision(missile->GetPower());
+				if (enemy->IsDead()) {
+					score_ += 500;
+					Explosion* newExp = new Explosion();
+					newExp->Initialize(explosionModel_, enemy->GetWorldPosition());
+					explosions_.push_back(newExp);
+				}
+			}
+		}
+	}
 
-	// パターンA: 敵が全滅していたら「WIN」
-	if (enemies_.empty()) {
-		ResultScene::isWin = true; // 勝ちフラグ
+	// 体当たり
+	for (Enemy* enemy : enemies_) {
+		if (enemy->IsDead())
+			continue;
+		if (LengthSquared(enemy->GetWorldPosition(), player_->GetWorldPosition()) < pow(kEnemyRadius + kPlayerRadius, 2)) {
+			enemy->OnCollision(100);
+			player_->OnCollision();
+			if (enemy->IsDead()) {
+				Explosion* newExp = new Explosion();
+				newExp->Initialize(explosionModel_, enemy->GetWorldPosition());
+				explosions_.push_back(newExp);
+			}
+		}
+	}
+
+	// UI更新
+	float hpRatio = (float)player_->GetHP() / (float)player_->GetMaxHP();
+	if (hpRatio < 0.0f)
+		hpRatio = 0.0f;
+	hpBarSprite_->SetSize({200.0f * hpRatio, 20.0f});
+
+	// 終了判定
+	bool isGameEnd = false;
+	bool isPlayerWin = false;
+	if (enemies_.empty() && enemySpawnList_.empty()) {
+		isGameEnd = true;
+		isPlayerWin = true;
+	} else if (gameLimitTimer_ <= 0) {
+		isGameEnd = true;
+		isPlayerWin = false;
+	} else if (player_->IsDead()) {
+		isGameEnd = true;
+		isPlayerWin = false;
+	}
+
+	if (isGameEnd) {
+		ResultScene::isWin = isPlayerWin;
+		ResultScene::finalScore = score_;
 		phase_ = ScenePhase::kFadeOut;
 		fadeTimer_ = 0;
 	}
 
-	// パターンB: 制限時間が尽きたら「LOSE」
-	else if (gameTimer_ <= 0) {
-		ResultScene::isWin = false; // 負けフラグ
-		phase_ = ScenePhase::kFadeOut;
-		fadeTimer_ = 0;
-	}
-
-#ifdef _DEBUG
-	if (input_->TriggerKey(DIK_0)) {
-		isDebugCameraActive_ = !isDebugCameraActive_;
-	}
-	if (isDebugCameraActive_) {
-		ImGui::Begin("Debug Camera");
-		ImGui::Text("Debug Camera: ON");
-		ImGui::End();
-	}
-#endif
-
+	// カメラ更新
 	if (isDebugCameraActive_) {
 		debugCamera_->Update();
 		camera_.matView = debugCamera_->GetCamera().matView;
 		camera_.matProjection = debugCamera_->GetCamera().matProjection;
 		camera_.TransferMatrix();
 	} else {
+		Vector3 pPos = player_->GetWorldPosition();
+		Vector3 pRot = player_->GetRotation();
+		Vector3 tCamPos = {pPos.x, pPos.y + 4.0f, pPos.z - 20.0f};
+		camera_.translation_.x = LerpShort(camera_.translation_.x, tCamPos.x, 0.1f);
+		camera_.translation_.y = LerpShort(camera_.translation_.y, tCamPos.y, 0.1f);
+		camera_.translation_.z = LerpShort(camera_.translation_.z, tCamPos.z, 0.1f);
+		camera_.rotation_.z = LerpShort(camera_.rotation_.z, -pRot.z * 1.0f, 0.1f);
+		camera_.rotation_.x = LerpShort(camera_.rotation_.x, -pRot.x * 0.5f, 0.1f);
 		camera_.UpdateMatrix();
 		camera_.TransferMatrix();
 	}
 
-	return std::nullopt;
-}
+	// レティクル更新
+	Vector3 pPos = player_->GetWorldPosition();
+	Vector3 pRot = player_->GetRotation();
+	Matrix4x4 matPlayer = MakeAffineMatrix({1, 1, 1}, pRot, pPos);
+	Vector3 targetPos = Transform({0, 0, -50.0f}, matPlayer);
+	reticle_->Update(targetPos, camera_);
 
-std::optional<SceneID> GameScene::UpdateFadeOut() {
-	fadeTimer_++;
-	if (fadeTimer_ >= kFadeDuration_) {
-		return SceneID::kResult;
+	// ロックオン
+	lockedEnemy_ = nullptr;
+	float minDst = 100.0f;
+	Vector2 rPos = reticle_->GetPosition();
+	for (Enemy* e : enemies_) {
+		if (e->IsDead())
+			continue;
+		Vector3 ePos = e->GetWorldPosition();
+		if (ePos.z < camera_.translation_.z)
+			continue;
+		Vector2 eScr = WorldToScreen(ePos, camera_.matView, camera_.matProjection, 1280, 720);
+		float dst = sqrtf(powf(eScr.x - rPos.x, 2) + powf(eScr.y - rPos.y, 2));
+		if (dst < minDst) {
+			minDst = dst;
+			lockedEnemy_ = e;
+		}
 	}
+
+	if (input_->IsTriggerMouse(1) || input_->TriggerKey(DIK_V)) {
+		if (lockedEnemy_)
+			player_->FireMissile(lockedEnemy_);
+	}
+
 	return std::nullopt;
 }
 
 void GameScene::Draw() {
-	KamataEngine::DirectXCommon* dxCommon = KamataEngine::DirectXCommon::GetInstance();
-
+	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 	if (phase_ != ScenePhase::kFadeIn) {
-		KamataEngine::Model::PreDraw(dxCommon->GetCommandList());
-		player_->Draw();
+		Model::PreDraw(dxCommon->GetCommandList());
 
-		for (Enemy* enemy : enemies_) {
-			// フェードアウト中は死んで消えた敵を描画しない
-			if (!enemy->IsDead()) {
-				enemy->Draw(camera_);
-			}
-		}
-		KamataEngine::Model::PostDraw();
+		//地面の描画
+		ground_->Draw(camera_);
+
+		player_->Draw();
+		for (Enemy* e : enemies_)
+			if (!e->IsDead())
+				e->Draw(camera_);
+		for (Explosion* e : explosions_)
+			e->Draw(camera_);
+		Model::PostDraw();
 	}
+
+	Sprite::PreDraw(dxCommon->GetCommandList(), Sprite::BlendMode::kNormal);
+	if (lockedEnemy_ && !lockedEnemy_->IsDead()) {
+		Vector3 ePos = lockedEnemy_->GetWorldPosition();
+		Vector2 sPos = WorldToScreen(ePos, camera_.matView, camera_.matProjection, 1280, 720);
+		lockOnMark_->SetPosition(sPos);
+		lockOnMark_->Draw();
+	}
+	if (reticle_)
+		reticle_->Draw();
+	if (hpBarSprite_)
+		hpBarSprite_->Draw();
+
+	int lives = player_->GetLives();
+	for (int i = 0; i < lives; i++) {
+		lifeIconSprite_->SetPosition({50.0f + i * 25.0f, 620.0f});
+		lifeIconSprite_->Draw();
+	}
+
+#ifdef _DEBUG
+	ImGui::Begin("HUD");
+	ImGui::Text("SCORE: %06d", score_);
+	ImGui::Text("HP: %d / %d", player_->GetHP(), player_->GetMaxHP());
+	ImGui::Text("LIVES: %d", player_->GetLives());
+	ImGui::End();
+#endif
 
 	float alpha = 0.0f;
-	if (phase_ == ScenePhase::kFadeIn) {
-		alpha = (float)fadeTimer_ / (float)kFadeDuration_;
-	} else if (phase_ == ScenePhase::kFadeOut) {
-		alpha = (float)fadeTimer_ / (float)kFadeDuration_;
-	}
-
+	if (phase_ == ScenePhase::kFadeIn)
+		alpha = (float)fadeTimer_ / kFadeDuration_;
+	else if (phase_ == ScenePhase::kFadeOut)
+		alpha = (float)fadeTimer_ / kFadeDuration_;
 	if (alpha > 0.0f && fadeSprite_) {
-		Sprite::PreDraw(dxCommon->GetCommandList(), Sprite::BlendMode::kNormal);
-		fadeSprite_->SetColor({1.0f, 1.0f, 1.0f, alpha});
+		fadeSprite_->SetColor({1, 1, 1, alpha});
 		fadeSprite_->Draw();
-		Sprite::PostDraw();
 	}
+	Sprite::PostDraw();
 }

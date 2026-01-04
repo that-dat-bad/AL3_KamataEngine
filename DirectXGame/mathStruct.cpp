@@ -1,7 +1,5 @@
 #include "mathStruct.h"
 
-
-
 Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
 	Matrix4x4 buf;
 	for (int i = 0; i < 4; i++) {
@@ -110,10 +108,10 @@ Vector3 operator+(const Vector3& v1, const Vector3& v2) {
 	buf.x = v1.x + v2.x;
 	buf.y = v1.y + v2.y;
 	buf.z = v1.z + v2.z;
-	return buf;	
+	return buf;
 }
 
-Vector3 operator+=(Vector3& v1, const Vector3& v2) { 
+Vector3 operator+=(Vector3& v1, const Vector3& v2) {
 	v1.x += v2.x;
 	v1.y += v2.y;
 	v1.z += v2.z;
@@ -178,4 +176,20 @@ Vector3& operator/=(Vector3& v, float s) {
 	v.y /= s;
 	v.z /= s;
 	return v;
+}
+float LerpShort(float start, float end, float t) { return start + (end - start) * t; }
+
+Vector2 WorldToScreen(const Vector3& worldPos, const Matrix4x4& matView, const Matrix4x4& matProjection, float screenWidth, float screenHeight) {
+	// 1. ビュー行列とプロジェクション行列を掛けてクリップ座標系へ
+	Vector3 pos = Transform(worldPos, matView);
+	pos = Transform(pos, matProjection); // ここで透視投影変換後の座標(wで割る前)になるが、Transform関数内でw除算されている前提
+
+	// もし自前のTransformがw除算までやっているならpos.x, pos.yは -1.0 ~ 1.0 の範囲にある
+
+	// 2. ビューポート変換 (-1.0 ~ 1.0 を 0 ~ ScreenSize に変換)
+	Vector2 screenPos;
+	screenPos.x = (pos.x + 1.0f) / 2.0f * screenWidth;
+	screenPos.y = (1.0f - pos.y) / 2.0f * screenHeight;
+
+	return screenPos;
 }

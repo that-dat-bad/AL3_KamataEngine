@@ -108,12 +108,16 @@
   <ItemGroup>
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="EnemyBullet.cpp" />
+    <ClCompile Include="Explosion.cpp" />
     <ClCompile Include="GameScene.cpp" />
+    <ClCompile Include="Ground.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mathStruct.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="PlayerBullet.cpp" />
+    <ClCompile Include="PlayerMissile.cpp" />
     <ClCompile Include="ResultScene.cpp" />
+    <ClCompile Include="Reticle.cpp" />
     <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="TitleGuide.cpp" />
     <ClCompile Include="TitleLogo.cpp" />
@@ -197,12 +201,16 @@
   <ItemGroup>
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="EnemyBullet.h" />
+    <ClInclude Include="Explosion.h" />
     <ClInclude Include="GameScene.h" />
+    <ClInclude Include="Ground.h" />
     <ClInclude Include="IScene.h" />
     <ClInclude Include="mathStruct.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="PlayerBullet.h" />
+    <ClInclude Include="PlayerMissile.h" />
     <ClInclude Include="ResultScene.h" />
+    <ClInclude Include="Reticle.h" />
     <ClInclude Include="SceneManager.h" />
     <ClInclude Include="TitleGuide.h" />
     <ClInclude Include="TitleLogo.h" />
