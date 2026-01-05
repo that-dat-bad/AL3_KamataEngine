@@ -50,8 +50,8 @@ GameScene::~GameScene() {
 void GameScene::Initialize() {
 	playerModel_ = Model::CreateFromOBJ("player");
 	enemyModel_ = Model::CreateFromOBJ("enemy");
-	playerBulletModel_ = Model::Create();
-	enemyBulletModel_ = Model::Create();
+	playerBulletModel_ = Model::CreateFromOBJ("playerBullet");
+	enemyBulletModel_ = Model::CreateFromOBJ("enemyBullet");
 
 	playerMissileModel_ = Model::Create();
 	explosionModel_ = Model::Create();
@@ -78,7 +78,7 @@ void GameScene::Initialize() {
 	reticle_ = new Reticle();
 	reticle_->Initialize();
 
-	lockOnTex_ = TextureManager::Load("white1x1.png");
+	lockOnTex_ = TextureManager::Load("lockOn.png");
 	lockOnMark_ = new Sprite(lockOnTex_, {0, 0}, {64, 64}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.5f, 0.5f}, false, false);
 	lockOnMark_->Initialize();
 

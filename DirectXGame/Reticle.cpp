@@ -5,11 +5,11 @@ using namespace KamataEngine;
 
 void Reticle::Initialize() {
 
-	textureHandle_ = TextureManager::Load("white1x1.png");
+	textureHandle_ = TextureManager::Load("reticle.png");
 
 
 	sprite_ = new Sprite(
-	    textureHandle_, {0.0f, 0.0f}, {32.0f, 32.0f}, {0.0f, 1.0f, 0.0f, 1.0f}, {0.5f, 0.5f}, false, false // ← これが抜けていました！
+	    textureHandle_, {0.0f, 0.0f}, {64.0f, 64.0f}, {0.0f, 1.0f, 0.0f, 1.0f}, {0.5f, 0.5f}, false, false 
 	);
 	sprite_->Initialize();
 }
