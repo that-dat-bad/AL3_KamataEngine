@@ -133,7 +133,6 @@ void Enemy::Fire() {
 	}
 }
 
-
 void Enemy::OnCollision(int damage) {
 	hp_ -= damage;
 	if (hp_ <= 0) {

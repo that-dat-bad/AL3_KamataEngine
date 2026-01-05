@@ -10,7 +10,7 @@ void Ground::Initialize(Model* model) {
 		worldTransforms_[i].Initialize();
 
 		// 巨大化させる (幅100倍, 奥行き40倍)
-		worldTransforms_[i].scale_ = {100.0f, 1.0f, 40.0f};
+		worldTransforms_[i].scale_ = {1.0f, 1.0f, 1.0f};
 
 		// 自機より少し下に配置
 		worldTransforms_[i].translation_.y = -10.0f;
@@ -22,7 +22,7 @@ void Ground::Initialize(Model* model) {
 
 void Ground::Update() {
 	// スクロール速度 (自機のスピード感)
-	const float kScrollSpeed = 1.0f;
+	const float kScrollSpeed = 3.0f;
 
 	for (int i = 0; i < kGroundCount; i++) {
 		// 手前(Zマイナス方向)に移動

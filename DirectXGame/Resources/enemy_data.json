@@ -1,27 +1,31 @@
 {
   "enemies": [
     {
+      "wave": 1,
       "spawnTime": 60,
       "type": "A",
       "attackPattern": "Normal",
-      "position": [ 10.0, 5.0, 50.0 ],
+      "position": [ 10.0, 5.0, 90.0 ],
       "velocity": [ 0.0, 0.0, -0.2 ]
     },
     {
-      "spawnTime": 120,
+      "wave": 1,
+      "spawnTime": 80,
       "type": "B",
       "attackPattern": "Homing",
       "position": [ -10.0, 5.0, 60.0 ],
       "velocity": [ 0.0, 0.0, -0.1 ]
     },
     {
-      "spawnTime": 180,
+      "wave": 1,
+      "spawnTime": 90,
       "type": "A",
       "attackPattern": "None",
       "position": [ 0.0, 8.0, 50.0 ],
       "velocity": [ 0.0, -0.1, -0.2 ]
     },
     {
+      "wave": 2,
       "spawnTime": 240,
       "type": "B",
       "attackPattern": "Normal",
