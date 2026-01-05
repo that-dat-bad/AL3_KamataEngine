@@ -52,8 +52,8 @@ void GameScene::Initialize() {
 	enemyModel_ = Model::CreateFromOBJ("enemy");
 	playerBulletModel_ = Model::CreateFromOBJ("playerBullet");
 	enemyBulletModel_ = Model::CreateFromOBJ("enemyBullet");
-
-	playerMissileModel_ = Model::Create();
+	enemyMissileModel_ = Model::CreateFromOBJ("enemyMissile");
+	playerMissileModel_ = Model::CreateFromOBJ("playerMissile");
 	explosionModel_ = Model::Create();
 
 	//groundModel_ = Model::CreateFromOBJ("ground");

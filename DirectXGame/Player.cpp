@@ -76,20 +76,20 @@ void Player::Update() {
 	const float kMaxTilt = 0.5f;
 	const float kMaxYaw = 0.3f;
 
-	if (input_->PushKey(DIK_LEFT)) {
+	if (input_->PushKey(DIK_A)) {
 		move.x -= kCharacterSpeed;
 		targetRotZ = kMaxTilt;
 		targetRotY = static_cast<float>(M_PI) - kMaxYaw;
-	} else if (input_->PushKey(DIK_RIGHT)) {
+	} else if (input_->PushKey(DIK_D)) {
 		move.x += kCharacterSpeed;
 		targetRotZ = -kMaxTilt;
 		targetRotY = static_cast<float>(M_PI) + kMaxYaw;
 	}
 
-	if (input_->PushKey(DIK_UP)) {
+	if (input_->PushKey(DIK_W)) {
 		move.y += kCharacterSpeed;
 		targetRotX = kMaxTilt;
-	} else if (input_->PushKey(DIK_DOWN)) {
+	} else if (input_->PushKey(DIK_S)) {
 		move.y -= kCharacterSpeed;
 		targetRotX = -kMaxTilt;
 	}
@@ -129,7 +129,7 @@ void Player::Draw() {
 }
 
 void Player::Attack() {
-	if (input_->TriggerKey(DIK_SPACE)) {
+	if (input_->IsPressMouse(0)) {
 		Vector3 position = worldTransform_.translation_;
 		const float kBulletSpeed = 1.0f;
 		Vector3 velocity(0, 0, -kBulletSpeed);
