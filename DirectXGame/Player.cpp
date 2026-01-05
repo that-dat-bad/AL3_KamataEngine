@@ -27,17 +27,14 @@ void Player::Initialize(KamataEngine::Model* model, Camera* camera) {
 	worldTransform_.rotation_.y = static_cast<float>(M_PI); // 180度回転
 	input_ = Input::GetInstance();
 
-	// HPリセット
 	hp_ = kMaxHP_;
-	// 残機リセット
 	lives_ = kDefaultLives_;
-
 	isDead_ = false;
 	invincibleTimer_ = 0;
 }
 
-void Player::Update() {
-	// 無敵タイマーを減らす
+void Player::Update(bool isInputEnable) {
+	// 無敵タイマー
 	if (invincibleTimer_ > 0) {
 		invincibleTimer_--;
 	}
@@ -76,22 +73,35 @@ void Player::Update() {
 	const float kMaxTilt = 0.5f;
 	const float kMaxYaw = 0.3f;
 
-	if (input_->PushKey(DIK_A)) {
-		move.x -= kCharacterSpeed;
-		targetRotZ = kMaxTilt;
-		targetRotY = static_cast<float>(M_PI) - kMaxYaw;
-	} else if (input_->PushKey(DIK_D)) {
-		move.x += kCharacterSpeed;
-		targetRotZ = -kMaxTilt;
-		targetRotY = static_cast<float>(M_PI) + kMaxYaw;
-	}
+	// 操作許可時のみ入力を受け付ける
+	if (isInputEnable) {
+		// ★変更: 矢印キーから WASD に変更
+		// Aキー (左)
+		if (input_->PushKey(DIK_A)) {
+			move.x -= kCharacterSpeed;
+			targetRotZ = kMaxTilt;
+			targetRotY = static_cast<float>(M_PI) - kMaxYaw;
+		}
+		// Dキー (右)
+		else if (input_->PushKey(DIK_D)) {
+			move.x += kCharacterSpeed;
+			targetRotZ = -kMaxTilt;
+			targetRotY = static_cast<float>(M_PI) + kMaxYaw;
+		}
 
-	if (input_->PushKey(DIK_W)) {
-		move.y += kCharacterSpeed;
-		targetRotX = kMaxTilt;
-	} else if (input_->PushKey(DIK_S)) {
-		move.y -= kCharacterSpeed;
-		targetRotX = -kMaxTilt;
+		// Wキー (上)
+		if (input_->PushKey(DIK_W)) {
+			move.y += kCharacterSpeed;
+			targetRotX = kMaxTilt;
+		}
+		// Sキー (下)
+		else if (input_->PushKey(DIK_S)) {
+			move.y -= kCharacterSpeed;
+			targetRotX = -kMaxTilt;
+		}
+
+		// 攻撃
+		Attack();
 	}
 
 	worldTransform_.translation_ += move;
@@ -110,12 +120,10 @@ void Player::Update() {
 	worldTransform_.rotation_.x = LerpShort(worldTransform_.rotation_.x, targetRotX, kTiltSpeed);
 	worldTransform_.rotation_.y = LerpShort(worldTransform_.rotation_.y, targetRotY, kTiltSpeed);
 
-	Attack();
 	UpdateWorldMatrix(worldTransform_);
 }
 
 void Player::Draw() {
-	// 無敵時間中は点滅
 	if (invincibleTimer_ % 4 < 2) {
 		model_->Draw(worldTransform_, *camera_);
 	}
@@ -129,15 +137,25 @@ void Player::Draw() {
 }
 
 void Player::Attack() {
+	// ★変更: スペースキー(DIK_SPACE) から マウス左クリック(0) に変更
+	// PushMouse(0)にすると押しっぱなしで連射になります。TriggerMouse(0)ならカチカチ連打。
+	// ここでは押しっぱなし連射(Push)にします。
 	if (input_->IsPressMouse(0)) {
-		Vector3 position = worldTransform_.translation_;
-		const float kBulletSpeed = 1.0f;
-		Vector3 velocity(0, 0, -kBulletSpeed);
-		velocity = TransformNormal(velocity, worldTransform_.matWorld_);
 
-		PlayerBullet* newBullet = new PlayerBullet();
-		newBullet->Initialize(bulletModel_, position, velocity);
-		bullets_.push_back(newBullet);
+		// 連射速度制限（これがないと毎フレーム発射されてすごいことになります）
+		// 簡易的に10フレームに1回発射する例
+		static int frameCount = 0;
+		frameCount++;
+		if (frameCount % 10 == 0) {
+			Vector3 position = worldTransform_.translation_;
+			const float kBulletSpeed = 1.0f;
+			Vector3 velocity(0, 0, -kBulletSpeed);
+			velocity = TransformNormal(velocity, worldTransform_.matWorld_);
+
+			PlayerBullet* newBullet = new PlayerBullet();
+			newBullet->Initialize(bulletModel_, position, velocity);
+			bullets_.push_back(newBullet);
+		}
 	}
 }
 
@@ -151,27 +169,19 @@ void Player::FireMissile(Enemy* target) {
 	missiles_.push_back(newMissile);
 }
 
-// 衝突時の処理 (残機システム)
 void Player::OnCollision() {
 	if (invincibleTimer_ > 0)
 		return;
 
 	hp_--;
-
-	// ダメージを受けたら少し無敵に
 	invincibleTimer_ = 60;
 
-	// HPが尽きたら
 	if (hp_ <= 0) {
-		// 残機を減らす
 		lives_--;
-
 		if (lives_ > 0) {
-			// まだ残機があるなら復活
-			hp_ = kMaxHP_;          // HP全快
-			invincibleTimer_ = 120; // 復活時は少し長めの無敵時間(2秒)
+			hp_ = kMaxHP_;
+			invincibleTimer_ = 120;
 		} else {
-			// 残機が尽きたらゲームオーバー
 			isDead_ = true;
 		}
 	}

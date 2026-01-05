@@ -9,7 +9,10 @@ class Player {
 public:
 	~Player();
 	void Initialize(KamataEngine::Model* model, KamataEngine::Camera* camera);
-	void Update();
+
+	// ★変更: 操作許可フラグを追加 (デフォルトはtrue)
+	void Update(bool isInputEnable = true);
+
 	void Draw();
 	void SetBulletModel(KamataEngine::Model* model) { bulletModel_ = model; };
 	void SetMissileModel(KamataEngine::Model* model) { missileModel_ = model; }
@@ -27,7 +30,7 @@ public:
 	int GetMaxHP() const { return kMaxHP_; }
 	bool IsDead() const { return isDead_; }
 
-	//残機数の取得	
+	// 残機数の取得
 	int GetLives() const { return lives_; }
 
 	// 衝突処理
@@ -53,8 +56,8 @@ private:
 	int hp_ = kMaxHP_;
 	bool isDead_ = false;
 
-	//残機
-	static const int kDefaultLives_ = 3; // 初期残機数
+	// 残機
+	static const int kDefaultLives_ = 3;
 	int lives_ = kDefaultLives_;
 
 	// 無敵時間タイマー

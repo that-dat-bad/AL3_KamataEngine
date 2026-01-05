@@ -47,6 +47,12 @@ private:
 	uint32_t lockOnTex_ = 0;
 	uint32_t fadeTextureHandle_ = 0;
 
+	// ★追加: 演出用テクスチャ
+	uint32_t texWave_ = 0;
+	uint32_t texReady_ = 0;
+	uint32_t texStart_ = 0;
+	uint32_t texClear_ = 0;
+
 	// 音声ハンドル
 	uint32_t soundLockOn_ = 0;
 	uint32_t soundMissile_ = 0;
@@ -62,7 +68,6 @@ private:
 	KamataEngine::Model* playerMissileModel_ = nullptr;
 	KamataEngine::Model* explosionModel_ = nullptr;
 	KamataEngine::Model* groundModel_ = nullptr;
-
 
 	// クラス・オブジェクト
 	KamataEngine::Camera camera_;
@@ -87,6 +92,12 @@ private:
 	KamataEngine::Sprite* hpBarSprite_ = nullptr;
 	KamataEngine::Sprite* lifeIconSprite_ = nullptr;
 	KamataEngine::Sprite* fadeSprite_ = nullptr;
+
+	// ★追加: 演出用スプライト
+	KamataEngine::Sprite* spriteWave_ = nullptr;
+	KamataEngine::Sprite* spriteReady_ = nullptr;
+	KamataEngine::Sprite* spriteStart_ = nullptr;
+	KamataEngine::Sprite* spriteClear_ = nullptr;
 
 	// ゲームステータス
 	int score_ = 0;
