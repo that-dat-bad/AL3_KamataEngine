@@ -30,6 +30,7 @@ GameScene::~GameScene() {
 	delete enemyModel_;
 	delete playerBulletModel_;
 	delete enemyBulletModel_;
+	delete enemyMissileModel_;
 	delete playerMissileModel_;
 	delete groundModel_;
 
@@ -130,7 +131,7 @@ void GameScene::Initialize() {
 
 	// --- 変数初期化 ---
 	score_ = 0;
-	gameLimitTimer_ = 60 * 180; // 3分制限など
+	gameLimitTimer_ = 60 * 180; 
 
 	currentWave_ = 1;
 	waveState_ = WaveState::Intro;

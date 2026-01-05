@@ -58,9 +58,11 @@ private:
 	KamataEngine::Model* playerBulletModel_ = nullptr;
 	KamataEngine::Model* enemyModel_ = nullptr;
 	KamataEngine::Model* enemyBulletModel_ = nullptr;
+	KamataEngine::Model* enemyMissileModel_ = nullptr;
 	KamataEngine::Model* playerMissileModel_ = nullptr;
 	KamataEngine::Model* explosionModel_ = nullptr;
 	KamataEngine::Model* groundModel_ = nullptr;
+
 
 	// クラス・オブジェクト
 	KamataEngine::Camera camera_;
