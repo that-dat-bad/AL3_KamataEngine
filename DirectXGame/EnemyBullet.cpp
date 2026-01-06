@@ -10,6 +10,11 @@ void EnemyBullet::Initialize(Model* model, const Vector3& position, const Vector
 	assert(model);
 	model_ = model;
 	worldTransform_.Initialize();
+
+	// ★追加: 弾のサイズを大きくする
+	// 元のサイズが小さい場合は 3.0f ～ 5.0f くらいに調整してみてください
+	worldTransform_.scale_ = {3.0f, 3.0f, 3.0f};
+
 	worldTransform_.translation_ = position;
 	velocity_ = velocity;
 
@@ -17,6 +22,9 @@ void EnemyBullet::Initialize(Model* model, const Vector3& position, const Vector
 	target_ = target;
 
 	deathTimer_ = kLifeTime;
+
+	// 行列の初期計算
+	UpdateWorldMatrix(worldTransform_);
 }
 
 void EnemyBullet::Update() {

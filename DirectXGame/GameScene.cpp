@@ -25,6 +25,11 @@ float LengthSquared(const Vector3& v1, const Vector3& v2) {
 }
 
 GameScene::~GameScene() {
+	// シーン終了時にロックオン音が鳴っていたら止める
+	if (isLockSoundPlayed_) {
+		Audio::GetInstance()->StopWave(voiceHandleLockOn_);
+	}
+
 	// モデル解放
 	delete playerModel_;
 	delete enemyModel_;
@@ -33,6 +38,8 @@ GameScene::~GameScene() {
 	delete enemyMissileModel_;
 	delete playerMissileModel_;
 	delete groundModel_;
+	delete skydomeModel_;
+	delete explosionModel_;
 
 	// オブジェクト解放
 	delete player_;
@@ -43,6 +50,10 @@ GameScene::~GameScene() {
 	delete hpBarSprite_;
 	delete lifeIconSprite_;
 	delete fadeSprite_;
+	delete scorePlaceSprite_;
+
+	// ★追加: 操作説明スプライト解放
+	delete spriteGuide_;
 
 	// 演出スプライト解放
 	delete spriteWave_;
@@ -64,8 +75,12 @@ void GameScene::Initialize() {
 	enemyBulletModel_ = Model::CreateFromOBJ("enemyBullet");
 	enemyMissileModel_ = Model::CreateFromOBJ("enemyMissile");
 	playerMissileModel_ = Model::CreateFromOBJ("playerMissile");
-	explosionModel_ = Model::Create();
+
+	// 爆発用モデル (sphere)
+	explosionModel_ = Model::CreateFromOBJ("sphere");
+
 	groundModel_ = Model::CreateFromOBJ("ground");
+	skydomeModel_ = Model::CreateFromOBJ("Skydome");
 
 	// --- カメラ・基本設定 ---
 	worldTransform_.Initialize();
@@ -83,6 +98,11 @@ void GameScene::Initialize() {
 	ground_ = new Ground();
 	ground_->Initialize(groundModel_);
 
+	// 天球の初期化
+	skydomeTransform_.Initialize();
+	skydomeTransform_.matWorld_ = MakeAffineMatrix(skydomeTransform_.scale_, skydomeTransform_.rotation_, skydomeTransform_.translation_);
+	skydomeTransform_.TransferMatrix();
+
 	reticle_ = new Reticle();
 	reticle_->Initialize();
 
@@ -97,28 +117,39 @@ void GameScene::Initialize() {
 	lifeIconSprite_ = new Sprite(uiTexHandle_, {0, 0}, {20, 20}, {1.0f, 1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, false, false);
 	lifeIconSprite_->Initialize();
 
+	// スコア表示の仮置き
+	scorePlaceSprite_ = new Sprite(uiTexHandle_, {1100, 50}, {300, 40}, {1.0f, 1.0f, 1.0f, 0.5f}, {0.5f, 0.5f}, false, false);
+	scorePlaceSprite_->Initialize();
+
+	// ★追加: 操作説明画像の読み込み (ファイル名 guide.png と仮定)
+	texGuide_ = TextureManager::Load("guide.png");
+	// 画面右下 (1280, 720) を基準に、画像サイズ (640, 200) の半分だけ内側に配置
+	// X: 1280 - 320 = 960
+	// Y: 720 - 100 = 620
+	spriteGuide_ = new Sprite(texGuide_, {960, 620}, {640, 200}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.5f, 0.5f}, false, false);
+	spriteGuide_->Initialize();
+
 	fadeTextureHandle_ = TextureManager::Load("white1x1.png");
 	fadeSprite_ = new Sprite(fadeTextureHandle_, {0, 0}, {1280, 720}, {1, 1, 1, 1}, {0, 0}, false, false);
 	fadeSprite_->Initialize();
 	fadeSprite_->SetTextureRect({0.0f, 0.0f}, {1.0f, 1.0f});
 
 	// 演出用テクスチャ
-	texWave_ = TextureManager::Load("white1x1.png");
-	texReady_ = TextureManager::Load("white1x1.png");
-	texStart_ = TextureManager::Load("white1x1.png");
-	texClear_ = TextureManager::Load("white1x1.png");
+	texReady_ = TextureManager::Load("text_ready.png");
+	texStart_ = TextureManager::Load("text_start.png");
+	texClear_ = TextureManager::Load("text_clear.png");
 
-	// 演出用スプライト生成
-	spriteWave_ = new Sprite(texWave_, {640, 360}, {300, 60}, {1.0f, 1.0f, 0.0f, 1.0f}, {0.5f, 0.5f}, false, false);
-	spriteWave_->Initialize();
-
-	spriteReady_ = new Sprite(texReady_, {640, 360}, {300, 60}, {1.0f, 0.5f, 0.0f, 1.0f}, {0.5f, 0.5f}, false, false);
+	// 演出用スプライト生成 (頂いたコードの通りサイズを設定)
+	// READY...
+	spriteReady_ = new Sprite(texReady_, {640, 360}, {300, 60}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.5f, 0.5f}, false, false);
 	spriteReady_->Initialize();
 
-	spriteStart_ = new Sprite(texStart_, {640, 360}, {400, 80}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.5f, 0.5f}, false, false);
+	// START!!
+	spriteStart_ = new Sprite(texStart_, {640, 360}, {400, 80}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.5f, 0.5f}, false, false);
 	spriteStart_->Initialize();
 
-	spriteClear_ = new Sprite(texClear_, {640, 360}, {400, 80}, {0.0f, 1.0f, 1.0f, 1.0f}, {0.5f, 0.5f}, false, false);
+	// WAVE CLEAR!!
+	spriteClear_ = new Sprite(texClear_, {640, 360}, {400, 80}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.5f, 0.5f}, false, false);
 	spriteClear_->Initialize();
 
 	// --- 音声読み込み ---
@@ -187,13 +218,12 @@ std::optional<SceneID> GameScene::UpdateFadeOut() {
 
 std::optional<SceneID> GameScene::UpdateMain() {
 	gameLimitTimer_--;
-	ground_->Update(); // 地面は常に動かす
+	ground_->Update();
 
 	// ==========================================
-	// 1. 死亡・ゲームオーバー判定 (最優先)
+	// 1. 死亡・ゲームオーバー判定
 	// ==========================================
 	bool isGameOver = false;
-
 	if (player_->IsDead()) {
 		isGameOver = true;
 	} else if (gameLimitTimer_ <= 0) {
@@ -201,11 +231,16 @@ std::optional<SceneID> GameScene::UpdateMain() {
 	}
 
 	if (isGameOver) {
+		if (isLockSoundPlayed_) {
+			Audio::GetInstance()->StopWave(voiceHandleLockOn_);
+			isLockSoundPlayed_ = false;
+		}
+
 		ResultScene::isWin = false;
 		ResultScene::finalScore = score_;
 		phase_ = ScenePhase::kFadeOut;
 		fadeTimer_ = 0;
-		return std::nullopt; // ここで終了
+		return std::nullopt;
 	}
 
 	// ==========================================
@@ -213,29 +248,23 @@ std::optional<SceneID> GameScene::UpdateMain() {
 	// ==========================================
 	switch (waveState_) {
 	case WaveState::Intro:
-		// "Wave X... Ready... Start!" の演出
 		waveTimer_++;
-		if (waveTimer_ > 180) { // 3秒経過でバトル開始
+		if (waveTimer_ > 180) { // 3秒で開始
 			waveState_ = WaveState::Battle;
 			waveTimer_ = 0;
 		}
 		break;
 
 	case WaveState::Battle:
-		waveTimer_++; // スポーンタイマー進行
-
-		// 敵スポーン処理
+		waveTimer_++;
 		{
 			auto it = enemySpawnList_.begin();
 			while (it != enemySpawnList_.end()) {
-				// 次のウェーブのデータならまだ出さない
 				if (it->wave != currentWave_)
 					break;
-				// 時間待ち
 				if (it->spawnTime > waveTimer_)
 					break;
 
-				// 生成
 				Enemy* newEnemy = new Enemy();
 				newEnemy->SetBulletModel(enemyBulletModel_);
 				newEnemy->SetMissileModel(enemyMissileModel_);
@@ -247,8 +276,6 @@ std::optional<SceneID> GameScene::UpdateMain() {
 			}
 		}
 
-		// ウェーブクリア判定
-		// フィールドに敵がおらず、かつ今のウェーブで出す予定の敵もいない
 		{
 			bool isSpawnFinished = true;
 			for (const auto& d : enemySpawnList_) {
@@ -257,9 +284,7 @@ std::optional<SceneID> GameScene::UpdateMain() {
 					break;
 				}
 			}
-
 			if (enemies_.empty() && isSpawnFinished) {
-				// クリア演出へ
 				waveState_ = WaveState::Clear;
 				waveTimer_ = 0;
 			}
@@ -267,10 +292,8 @@ std::optional<SceneID> GameScene::UpdateMain() {
 		break;
 
 	case WaveState::Clear:
-		// "Wave Clear!" 表示などの待機
 		waveTimer_++;
-		if (waveTimer_ > 120) { // 2秒待機
-			// 次のウェーブがあるか確認
+		if (waveTimer_ > 120) {
 			bool hasNextWave = false;
 			for (const auto& d : enemySpawnList_) {
 				if (d.wave > currentWave_) {
@@ -278,13 +301,16 @@ std::optional<SceneID> GameScene::UpdateMain() {
 					break;
 				}
 			}
-
 			if (hasNextWave) {
 				currentWave_++;
 				waveState_ = WaveState::Intro;
 				waveTimer_ = 0;
 			} else {
-				// 全ウェーブクリア（勝利）
+				if (isLockSoundPlayed_) {
+					Audio::GetInstance()->StopWave(voiceHandleLockOn_);
+					isLockSoundPlayed_ = false;
+				}
+
 				ResultScene::isWin = true;
 				ResultScene::finalScore = score_;
 				phase_ = ScenePhase::kFadeOut;
@@ -297,11 +323,8 @@ std::optional<SceneID> GameScene::UpdateMain() {
 	// ==========================================
 	// 3. ゲーム更新処理
 	// ==========================================
-
-	// ★追加: 操作可能かどうかの判定 (戦闘中 かつ 生存)
 	bool isPlayerActive = (waveState_ == WaveState::Battle) && !player_->IsDead();
 
-	// Player更新にフラグを渡す
 	player_->Update(isPlayerActive);
 
 	enemies_.remove_if([](Enemy* e) {
@@ -329,7 +352,7 @@ std::optional<SceneID> GameScene::UpdateMain() {
 	const float kEnemyRadius = 4.0f;
 	const float kBulletRadius = 0.5f;
 
-	// 1. 自弾 vs 敵
+	// 自弾 vs 敵
 	for (PlayerBullet* pBullet : player_->GetBullets()) {
 		for (Enemy* enemy : enemies_) {
 			if (pBullet->IsDead() || enemy->IsDead())
@@ -339,7 +362,7 @@ std::optional<SceneID> GameScene::UpdateMain() {
 				enemy->OnCollision(pBullet->GetPower());
 				if (enemy->IsDead()) {
 					score_ += 100;
-					Audio::GetInstance()->PlayWave(soundExplosion_); // 爆発音
+					Audio::GetInstance()->PlayWave(soundExplosion_);
 					Explosion* newExp = new Explosion();
 					newExp->Initialize(explosionModel_, enemy->GetWorldPosition());
 					explosions_.push_back(newExp);
@@ -348,7 +371,7 @@ std::optional<SceneID> GameScene::UpdateMain() {
 		}
 	}
 
-	// 2. 敵弾 vs 自機
+	// 敵弾 vs 自機
 	for (Enemy* enemy : enemies_) {
 		for (EnemyBullet* eBullet : enemy->GetBullets()) {
 			if (eBullet->IsDead())
@@ -364,17 +387,14 @@ std::optional<SceneID> GameScene::UpdateMain() {
 			if (LengthSquared(eMissile->GetWorldPosition(), player_->GetWorldPosition()) < pow(kBulletRadius + kPlayerRadius, 2)) {
 				eMissile->OnCollision();
 				player_->OnCollision();
-
-			
 				Explosion* newExp = new Explosion();
 				newExp->Initialize(explosionModel_, eMissile->GetWorldPosition());
 				explosions_.push_back(newExp);
 			}
 		}
-
 	}
 
-	// 3. ミサイル vs 敵
+	// ミサイル vs 敵
 	for (PlayerMissile* missile : player_->GetMissiles()) {
 		for (Enemy* enemy : enemies_) {
 			if (missile->IsDead() || enemy->IsDead())
@@ -384,7 +404,7 @@ std::optional<SceneID> GameScene::UpdateMain() {
 				enemy->OnCollision(missile->GetPower());
 				if (enemy->IsDead()) {
 					score_ += 500;
-					Audio::GetInstance()->PlayWave(soundExplosion_); // 爆発音
+					Audio::GetInstance()->PlayWave(soundExplosion_);
 					Explosion* newExp = new Explosion();
 					newExp->Initialize(explosionModel_, enemy->GetWorldPosition());
 					explosions_.push_back(newExp);
@@ -393,14 +413,13 @@ std::optional<SceneID> GameScene::UpdateMain() {
 		}
 	}
 
-	// 4. 体当たり
+	// 体当たり
 	for (Enemy* enemy : enemies_) {
 		if (enemy->IsDead())
 			continue;
 		if (LengthSquared(enemy->GetWorldPosition(), player_->GetWorldPosition()) < pow(kEnemyRadius + kPlayerRadius, 2)) {
 			enemy->OnCollision(100);
 			player_->OnCollision();
-
 			if (enemy->IsDead()) {
 				Audio::GetInstance()->PlayWave(soundExplosion_);
 				Explosion* newExp = new Explosion();
@@ -433,7 +452,7 @@ std::optional<SceneID> GameScene::UpdateMain() {
 		camera_.TransferMatrix();
 	}
 
-	// --- ロックオンシステム ---
+	// --- ロックオン ---
 	Vector3 pPos = player_->GetWorldPosition();
 	Vector3 pRot = player_->GetRotation();
 	Matrix4x4 matPlayer = MakeAffineMatrix({1, 1, 1}, pRot, pPos);
@@ -457,17 +476,19 @@ std::optional<SceneID> GameScene::UpdateMain() {
 		}
 	}
 
-	// ロックオン音
+	// ロックオン音の制御
 	if (lockedEnemy_) {
 		if (!isLockSoundPlayed_) {
-			Audio::GetInstance()->PlayWave(soundLockOn_);
+			voiceHandleLockOn_ = Audio::GetInstance()->PlayWave(soundLockOn_, true);
 			isLockSoundPlayed_ = true;
 		}
 	} else {
-		isLockSoundPlayed_ = false;
+		if (isLockSoundPlayed_) {
+			Audio::GetInstance()->StopWave(voiceHandleLockOn_);
+			isLockSoundPlayed_ = false;
+		}
 	}
 
-	// ★変更: ミサイル発射も操作可能なときだけ
 	if (isPlayerActive) {
 		if (input_->IsTriggerMouse(1)) {
 			if (lockedEnemy_) {
@@ -477,7 +498,7 @@ std::optional<SceneID> GameScene::UpdateMain() {
 		}
 	}
 
-	// UI更新
+	// UI
 	float hpRatio = (float)player_->GetHP() / (float)player_->GetMaxHP();
 	if (hpRatio < 0.0f)
 		hpRatio = 0.0f;
@@ -491,6 +512,10 @@ void GameScene::Draw() {
 
 	if (phase_ != ScenePhase::kFadeIn) {
 		Model::PreDraw(dxCommon->GetCommandList());
+		// 天球を描画 (地面より先に描く)
+		if (skydomeModel_) {
+			skydomeModel_->Draw(skydomeTransform_, camera_);
+		}
 		ground_->Draw(camera_);
 		player_->Draw();
 		for (Enemy* e : enemies_)
@@ -511,39 +536,42 @@ void GameScene::Draw() {
 	if (reticle_)
 		reticle_->Draw();
 
-	if (hpBarSprite_)
+	// UI描画
+	if (hpBarSprite_) {
+		hpBarSprite_->SetPosition({50.0f, 680.0f});
 		hpBarSprite_->Draw();
+	}
 	int lives = player_->GetLives();
 	for (int i = 0; i < lives; i++) {
-		lifeIconSprite_->SetPosition({50.0f + i * 25.0f, 620.0f});
+		lifeIconSprite_->SetPosition({50.0f + i * 40.0f, 640.0f});
 		lifeIconSprite_->Draw();
 	}
 
-	// 演出スプライトの描画
+	// スコア表示（仮置き）
+	if (scorePlaceSprite_) {
+		scorePlaceSprite_->Draw();
+	}
+
+	// ★追加: 操作説明スプライト
+	if (spriteGuide_) {
+		spriteGuide_->Draw();
+	}
+
+	// 演出スプライト
 	if (waveState_ == WaveState::Intro) {
-		if (waveTimer_ < 60) {
-			// WAVE
-			if (spriteWave_)
-				spriteWave_->Draw();
-		} else if (waveTimer_ < 120) {
-			// WAVE... READY...
-			if (spriteWave_)
-				spriteWave_->Draw();
+		if (waveTimer_ < 120) {
 			if (spriteReady_)
 				spriteReady_->Draw();
 		} else {
-			// START!!!
 			if (spriteStart_)
 				spriteStart_->Draw();
 		}
 	} else if (waveState_ == WaveState::Clear) {
-		// CLEAR!!
 		if (spriteClear_)
 			spriteClear_->Draw();
 	}
 
 #ifdef _DEBUG
-	// Debug HUD
 	ImGui::Begin("HUD");
 	ImGui::Text("WAVE: %d", currentWave_);
 	ImGui::Text("SCORE: %06d", score_);

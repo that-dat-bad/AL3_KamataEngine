@@ -3,6 +3,7 @@
 #include "mathStruct.h"
 #include <cassert>
 #include <cmath>
+#include <cstdlib> // rand()用
 
 // 円周率
 #ifndef M_PI
@@ -50,7 +51,10 @@ void Enemy::Initialize(Model* model, const Vector3& position, const Vector3& vel
 	stateFunction_ = &Enemy::UpdateApproach;
 	isDead_ = false;
 
-	// 開幕攻撃
+	// ★追加: 初回の発射タイマーを設定 (60~200フレーム)
+	shotTimer_ = rand() % 141 + 60;
+
+	// 開幕攻撃（出現と同時に1発撃つ場合はこのまま残します）
 	Fire();
 }
 
@@ -67,7 +71,7 @@ void Enemy::Update() {
 		bullet->Update();
 	}
 
-	// ★追加: ミサイル更新
+	// ミサイル更新
 	missiles_.remove_if([](EnemyMissile* missile) {
 		if (missile->IsDead()) {
 			delete missile;
@@ -79,9 +83,19 @@ void Enemy::Update() {
 		missile->Update();
 	}
 
+	// ★追加: 攻撃タイマー処理
+	// 毎フレームカウントダウン
+	shotTimer_--;
+	if (shotTimer_ <= 0) {
+		// 弾を発射
+		Fire();
+		// 次回の発射時間を再抽選 (60F ～ 200F)
+		shotTimer_ = rand() % 141 + 60;
+	}
+
 	(this->*stateFunction_)();
 
-	if (worldTransform_.translation_.z < -10.0f || worldTransform_.translation_.z >1000.0f) {
+	if (worldTransform_.translation_.z < -10.0f || worldTransform_.translation_.z > 1000.0f) {
 		isDead_ = true;
 	}
 	UpdateWorldMatrix(worldTransform_);
@@ -92,7 +106,6 @@ void Enemy::Draw(const Camera& camera) {
 	for (EnemyBullet* bullet : bullets_) {
 		bullet->Draw(camera);
 	}
-	// ★追加: ミサイル描画
 	for (EnemyMissile* missile : missiles_) {
 		missile->Draw(camera);
 	}
@@ -141,7 +154,7 @@ void Enemy::Fire() {
 		newBullet->Initialize(bulletModel_, position, velocity, false, nullptr);
 		bullets_.push_back(newBullet);
 	} else if (attackPattern_ == AttackPattern::Homing) {
-		// ★変更: ミサイル発射
+		// ミサイル発射
 		EnemyMissile* newMissile = new EnemyMissile();
 		// プレイヤーをターゲットにする
 		newMissile->Initialize(missileModel_, position, player_);

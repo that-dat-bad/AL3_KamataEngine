@@ -11,6 +11,7 @@ void PlayerBullet::Initialize(Model* model, const Vector3& position, const Vecto
 	worldTransform_.translation_ = position;
 	velocity_ = velocity;
 	deathTimer_ = kLifeTime;
+	UpdateWorldMatrix(worldTransform_);
 }
 
 void PlayerBullet::Update() {

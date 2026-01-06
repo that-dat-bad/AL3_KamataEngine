@@ -47,7 +47,10 @@ private:
 	uint32_t lockOnTex_ = 0;
 	uint32_t fadeTextureHandle_ = 0;
 
-	// ★追加: 演出用テクスチャ
+	// ★追加: 操作説明用テクスチャ
+	uint32_t texGuide_ = 0;
+
+	// 演出用テクスチャ
 	uint32_t texWave_ = 0;
 	uint32_t texReady_ = 0;
 	uint32_t texStart_ = 0;
@@ -57,6 +60,10 @@ private:
 	uint32_t soundLockOn_ = 0;
 	uint32_t soundMissile_ = 0;
 	uint32_t soundExplosion_ = 0;
+
+	// 再生中のロックオン音を管理する変数
+	uint32_t voiceHandleLockOn_ = 0;
+
 	bool isLockSoundPlayed_ = false;
 
 	// 3Dモデル
@@ -68,6 +75,10 @@ private:
 	KamataEngine::Model* playerMissileModel_ = nullptr;
 	KamataEngine::Model* explosionModel_ = nullptr;
 	KamataEngine::Model* groundModel_ = nullptr;
+
+	// 天球用
+	KamataEngine::Model* skydomeModel_ = nullptr;
+	KamataEngine::WorldTransform skydomeTransform_;
 
 	// クラス・オブジェクト
 	KamataEngine::Camera camera_;
@@ -93,7 +104,13 @@ private:
 	KamataEngine::Sprite* lifeIconSprite_ = nullptr;
 	KamataEngine::Sprite* fadeSprite_ = nullptr;
 
-	// ★追加: 演出用スプライト
+	// スコア表示用（仮置き）スプライト
+	KamataEngine::Sprite* scorePlaceSprite_ = nullptr;
+
+	// ★追加: 操作説明用スプライト
+	KamataEngine::Sprite* spriteGuide_ = nullptr;
+
+	// 演出用スプライト
 	KamataEngine::Sprite* spriteWave_ = nullptr;
 	KamataEngine::Sprite* spriteReady_ = nullptr;
 	KamataEngine::Sprite* spriteStart_ = nullptr;
@@ -101,10 +118,10 @@ private:
 
 	// ゲームステータス
 	int score_ = 0;
-	int32_t gameLimitTimer_ = 0; // 全体の制限時間（必要なら）
+	int32_t gameLimitTimer_ = 0;
 
 	// ウェーブ管理
 	int currentWave_ = 1;
 	WaveState waveState_ = WaveState::Intro;
-	int waveTimer_ = 0; // 演出やスポーン用の汎用タイマー
+	int waveTimer_ = 0;
 };

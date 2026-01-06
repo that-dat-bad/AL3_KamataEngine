@@ -45,7 +45,7 @@ void TitleScene::Initialize() {
 	logo_->SetPosition(logoPosition_);
 
 	// --- 背景 (天球) の初期化 ---
-	skydomeModel_ = Model::CreateFromOBJ("titleSkydome");
+	skydomeModel_ = Model::CreateFromOBJ("Skydome");
 	skydomeTransform_.Initialize();
 	// 行列更新
 	skydomeTransform_.matWorld_ = MakeAffineMatrix(skydomeTransform_.scale_, skydomeTransform_.rotation_, skydomeTransform_.translation_);

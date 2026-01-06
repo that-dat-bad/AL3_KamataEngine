@@ -17,6 +17,7 @@ void PlayerMissile::Initialize(Model* model, const Vector3& position, Enemy* tar
 
 	velocity_ = {0.0f, 0.0f, 1.0f};
 	deathTimer_ = 60 * 10;
+	UpdateWorldMatrix(worldTransform_);
 }
 
 void PlayerMissile::Update() {

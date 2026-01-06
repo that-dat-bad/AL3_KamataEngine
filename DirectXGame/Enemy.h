@@ -21,11 +21,9 @@ public:
 
 	void SetPlayer(Player* player) { player_ = player; }
 	void SetBulletModel(KamataEngine::Model* model) { bulletModel_ = model; }
-	// ★追加: ミサイルモデルのセット
 	void SetMissileModel(KamataEngine::Model* model) { missileModel_ = model; }
 
 	const std::list<EnemyBullet*>& GetBullets() const { return bullets_; }
-	// ★追加: ミサイルリストの取得
 	const std::list<EnemyMissile*>& GetMissiles() const { return missiles_; }
 
 	KamataEngine::Vector3 GetWorldPosition() const { return worldTransform_.translation_; }
@@ -41,14 +39,12 @@ private:
 	KamataEngine::WorldTransform worldTransform_;
 	KamataEngine::Model* model_ = nullptr;
 	KamataEngine::Model* bulletModel_ = nullptr;
-	// ★追加: ミサイルモデル
 	KamataEngine::Model* missileModel_ = nullptr;
 
 	Player* player_ = nullptr;
 	KamataEngine::Vector3 velocity_;
 
 	std::list<EnemyBullet*> bullets_;
-	// ★追加: ミサイルリスト
 	std::list<EnemyMissile*> missiles_;
 
 	void (Enemy::*stateFunction_)() = nullptr;
@@ -57,4 +53,7 @@ private:
 	bool isDead_ = false;
 	EnemyType type_ = EnemyType::TypeA;
 	AttackPattern attackPattern_ = AttackPattern::None;
+
+	// ★追加: 発射間隔管理用タイマー
+	int shotTimer_ = 0;
 };
