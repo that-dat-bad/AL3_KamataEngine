@@ -15,6 +15,9 @@ Enemy::~Enemy() {
 	for (EnemyBullet* bullet : bullets_) {
 		delete bullet;
 	}
+	for (EnemyMissile* missile : missiles_) {
+		delete missile;
+	}
 }
 
 void Enemy::Initialize(Model* model, const Vector3& position, const Vector3& velocity, const std::string& typeStr, const std::string& patternStr) {
@@ -52,6 +55,7 @@ void Enemy::Initialize(Model* model, const Vector3& position, const Vector3& vel
 }
 
 void Enemy::Update() {
+	// 弾更新
 	bullets_.remove_if([](EnemyBullet* bullet) {
 		if (bullet->IsDead()) {
 			delete bullet;
@@ -63,10 +67,21 @@ void Enemy::Update() {
 		bullet->Update();
 	}
 
+	// ★追加: ミサイル更新
+	missiles_.remove_if([](EnemyMissile* missile) {
+		if (missile->IsDead()) {
+			delete missile;
+			return true;
+		}
+		return false;
+	});
+	for (EnemyMissile* missile : missiles_) {
+		missile->Update();
+	}
+
 	(this->*stateFunction_)();
 
-	// 画面外に行ったら削除
-	if (worldTransform_.translation_.z < -10.0f || worldTransform_.translation_.z > 60.0f) {
+	if (worldTransform_.translation_.z < -10.0f || worldTransform_.translation_.z >1000.0f) {
 		isDead_ = true;
 	}
 	UpdateWorldMatrix(worldTransform_);
@@ -76,6 +91,10 @@ void Enemy::Draw(const Camera& camera) {
 	model_->Draw(worldTransform_, camera);
 	for (EnemyBullet* bullet : bullets_) {
 		bullet->Draw(camera);
+	}
+	// ★追加: ミサイル描画
+	for (EnemyMissile* missile : missiles_) {
+		missile->Draw(camera);
 	}
 }
 
@@ -114,22 +133,19 @@ void Enemy::Fire() {
 		return;
 
 	Vector3 position = worldTransform_.translation_;
-	Vector3 velocity = {0, 0, 0};
 
 	if (attackPattern_ == AttackPattern::Normal) {
 		// 通常弾
-		velocity = {0, 0, -0.5f};
+		Vector3 velocity = {0, 0, -0.5f};
 		EnemyBullet* newBullet = new EnemyBullet();
-		// Homing=false
 		newBullet->Initialize(bulletModel_, position, velocity, false, nullptr);
 		bullets_.push_back(newBullet);
 	} else if (attackPattern_ == AttackPattern::Homing) {
-		// 追尾弾
-		velocity = {0, 0, -0.3f};
-		EnemyBullet* newBullet = new EnemyBullet();
-		// Homing=true, Target=Player
-		newBullet->Initialize(bulletModel_, position, velocity, true, player_);
-		bullets_.push_back(newBullet);
+		// ★変更: ミサイル発射
+		EnemyMissile* newMissile = new EnemyMissile();
+		// プレイヤーをターゲットにする
+		newMissile->Initialize(missileModel_, position, player_);
+		missiles_.push_back(newMissile);
 	}
 }
 

@@ -62,11 +62,10 @@ void GameScene::Initialize() {
 	enemyModel_ = Model::CreateFromOBJ("enemy");
 	playerBulletModel_ = Model::CreateFromOBJ("playerBullet");
 	enemyBulletModel_ = Model::CreateFromOBJ("enemyBullet");
+	enemyMissileModel_ = Model::CreateFromOBJ("enemyMissile");
 	playerMissileModel_ = Model::CreateFromOBJ("playerMissile");
 	explosionModel_ = Model::Create();
-
 	groundModel_ = Model::CreateFromOBJ("ground");
-	//groundModel_ = Model::Create(); // ない場合
 
 	// --- カメラ・基本設定 ---
 	worldTransform_.Initialize();
@@ -125,7 +124,7 @@ void GameScene::Initialize() {
 	// --- 音声読み込み ---
 	soundLockOn_ = Audio::GetInstance()->LoadWave("missile_lock.wav");
 	soundMissile_ = Audio::GetInstance()->LoadWave("missile_search.wav");
-	soundExplosion_ = Audio::GetInstance()->LoadWave("warning_incoming.wav");
+	soundExplosion_ = Audio::GetInstance()->LoadWave("explosion.mp3");
 
 	// --- JSON読み込み ---
 	std::ifstream file("./Resources/enemy_data.json");
@@ -239,6 +238,7 @@ std::optional<SceneID> GameScene::UpdateMain() {
 				// 生成
 				Enemy* newEnemy = new Enemy();
 				newEnemy->SetBulletModel(enemyBulletModel_);
+				newEnemy->SetMissileModel(enemyMissileModel_);
 				newEnemy->SetPlayer(player_);
 				newEnemy->Initialize(enemyModel_, it->position, it->velocity, it->type, it->attackPattern);
 				enemies_.push_back(newEnemy);
@@ -358,6 +358,20 @@ std::optional<SceneID> GameScene::UpdateMain() {
 				player_->OnCollision();
 			}
 		}
+		for (EnemyMissile* eMissile : enemy->GetMissiles()) {
+			if (eMissile->IsDead())
+				continue;
+			if (LengthSquared(eMissile->GetWorldPosition(), player_->GetWorldPosition()) < pow(kBulletRadius + kPlayerRadius, 2)) {
+				eMissile->OnCollision();
+				player_->OnCollision();
+
+			
+				Explosion* newExp = new Explosion();
+				newExp->Initialize(explosionModel_, eMissile->GetWorldPosition());
+				explosions_.push_back(newExp);
+			}
+		}
+
 	}
 
 	// 3. ミサイル vs 敵

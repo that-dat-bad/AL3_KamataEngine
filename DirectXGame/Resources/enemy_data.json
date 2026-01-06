@@ -26,11 +26,11 @@
     },
     {
       "wave": 2,
-      "spawnTime": 240,
+      "spawnTime": 20,
       "type": "B",
       "attackPattern": "Normal",
-      "position": [ 15.0, 0.0, 70.0 ],
-      "velocity": [ -0.1, 0.0, -0.3 ]
+      "position": [ 0.0, 8.0, 80.0 ],
+      "velocity": [ 0.0, 0.0, -0.2 ]
     }
   ]
 }
